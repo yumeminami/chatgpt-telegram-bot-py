@@ -1,2 +1,2 @@
 black .
-autoflake8 --remove-unused-variables .
+autoflake8 --in-place --remove-unused-variables --recursive  --exclude=__init__.py .

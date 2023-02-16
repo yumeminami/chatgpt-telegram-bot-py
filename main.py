@@ -1,10 +1,5 @@
-import json
-import os
-from chatgpt.completions import completions
-from chatgpt.edits import edits
-from chatgpt.images import images
-from telegram_bot.bot import bot_run
 from config import init_config
+from telegram_bot.bot import bot_run
 
 
 def main():

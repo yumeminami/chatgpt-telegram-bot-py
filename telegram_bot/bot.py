@@ -3,7 +3,6 @@ import telebot
 from chatgpt.completions import completions
 from chatgpt.edits import edits
 from chatgpt.images import images as imgs
-from chatgpt.images_edit import images_edit as imgs_edit
 
 main_menu_text = (
     "*Main Menu*\n"
@@ -17,7 +16,7 @@ help_text = "*What you want to know?*"
 
 conversation_help_text = (
     "/conversation\n"
-    "   *start a conversation* - _you can use the conversation command or directly input something then star a conversation._\n"
+    "   *start a conversation* - _you can use the conversation command or directly input something then start a conversation._\n"
     "   *new another conversation* - _If you want to end the current conversation and new a conversation, you can reuse the conversation command or end command_.\n"
 )
 
@@ -34,6 +33,8 @@ mode = "conversation"
 
 def bot_run():
     bot = telebot.TeleBot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
+
+    print("Authorized on account {}".format(os.getenv("TELEGRAM_BOT_TOKEN")))
 
     @bot.message_handler(commands=["start"])
     def start(message):
@@ -92,6 +93,7 @@ def bot_run():
     @bot.callback_query_handler(func=lambda call: True)
     def callback_query(call):
         global previous_message, previous_photo, mode
+        bot.answer_callback_query(call.id)
         if call.data == "conversation":
             bot.send_message(call.message.chat.id, "conversation created.")
             previous_message = None
@@ -110,8 +112,6 @@ def bot_run():
             bot.send_message(
                 call.message.chat.id, text=images_help_text, parse_mode="Markdown"
             )
-
-        return
 
     @bot.message_handler(content_types=["text"])
     def handle_text(message):
@@ -140,6 +140,10 @@ def bot_run():
                 bot.send_message(message.chat.id, reply)
             else:
                 print("images_edit")
+
+                url = imgs(message.text)
+                reply = "The image url is \n" + url
+                bot.send_message(message.chat.id, reply)
 
             return
 
