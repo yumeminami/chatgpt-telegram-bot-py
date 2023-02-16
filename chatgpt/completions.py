@@ -8,7 +8,12 @@ def completions(prompt):
     try:
         print(prompt)
         response = openai.Completion.create(
-            model="text-davinci-003", prompt=prompt, temperature=0.7, max_tokens=1000, top_p=1)
+            model="text-davinci-003",
+            prompt=prompt,
+            temperature=0.7,
+            max_tokens=1000,
+            top_p=1,
+        )
         return response.choices[0].text
     except Exception as e:
         print(e)
