@@ -33,6 +33,7 @@ button_description = {
     "conversation_help": conversation_help_text,
     "images_help": images_help_text,
     "help": help_text,
+    "end": "Now you new another conversation or can generate another image",
 }
 previous_message_map = {}
 previous_photo = None
@@ -51,7 +52,8 @@ def bot_run():
         btn1 = telebot.types.InlineKeyboardButton(
             "Conversation", callback_data="conversation"
         )
-        btn2 = telebot.types.InlineKeyboardButton("Images", callback_data="images")
+        btn2 = telebot.types.InlineKeyboardButton(
+            "Images", callback_data="images")
         btn3 = telebot.types.InlineKeyboardButton("Help", callback_data="help")
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(btn1, btn2)
@@ -61,28 +63,13 @@ def bot_run():
         )
         return
 
-    @bot.message_handler(commands=["end"])
-    @bot.message_handler(commands=["conversation"])
+    @bot.message_handler(commands=["conversation", "images", "end"])
     def conversation_or_end(message):
         global previous_message_map, mode, previous_photo
         handle_previous_message(message.from_user.id)
-        mode = "conversation"
+        mode = "images" if message.text == "/images" else "conversation"
         previous_photo = None
-        if message.text == "/end":
-            bot.send_message(
-                message.chat.id,
-                "Now you new another conversation or can generate another image",
-            )
-            return
-        bot.send_message(message.chat.id, button_description["conversation"])
-        return
-
-    @bot.message_handler(commands=["images"])
-    def images(message):
-        global previous_photo, mode
-        previous_photo = None
-        mode = "images"
-        bot.send_message(message.chat.id, button_description["images"])
+        bot.send_message(message.chat.id, button_description[message.text[1:]])
         return
 
     @bot.message_handler(commands=["help"])
@@ -99,12 +86,10 @@ def bot_run():
     def callback_query(call):
         global previous_message_map, previous_photo, mode
         bot.answer_callback_query(call.id)
-        if call.data == "conversation":
-            handle_previous_message(call.from_user.id)
-            mode = "conversation"
-        elif call.data == "images":
+        if call.data == "conversation" or call.data == "images":
             previous_photo = None
-            mode = "images"
+            handle_previous_message(call.from_user.id)
+            mode = call.data
         elif call.data == "help":
             bot.edit_message_text(
                 text=button_description[call.data],
@@ -159,7 +144,8 @@ def help_mark_up():
     btn1 = telebot.types.InlineKeyboardButton(
         "Conversation", callback_data="conversation_help"
     )
-    btn2 = telebot.types.InlineKeyboardButton("Images", callback_data="images_help")
+    btn2 = telebot.types.InlineKeyboardButton(
+        "Images", callback_data="images_help")
     markup = telebot.types.InlineKeyboardMarkup()
     markup.add(btn1, btn2)
     return markup
