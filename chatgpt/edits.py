@@ -10,7 +10,6 @@ def edits(input, instruction):
             input=input,
             instruction=instruction,
         )
-        print(response)
         return response["choices"][0]["text"]
     except Exception as e:
         print(e)
