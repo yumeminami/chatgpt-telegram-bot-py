@@ -7,7 +7,7 @@ def images(prompt) -> str:
         openai.api_key = os.getenv("OPENAI_API_KEY")
         response = openai.Image.create(
             prompt=prompt,
-            size="1024x1024",
+            size="512x512",
         )
         return response["data"][0]["url"]
     except Exception as e:
