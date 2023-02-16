@@ -3,6 +3,7 @@ import telebot
 from chatgpt.completions import completions
 from chatgpt.edits import edits
 from chatgpt.images import images as imgs
+from stable_diffusion.stable_diffusion import predict
 
 main_menu_text = (
     "*Main Menu*\n"
@@ -135,13 +136,13 @@ def bot_run():
         elif mode == "images":
             if previous_photo is None:
                 print("images")
-                url = imgs(message.text)
+                url = predict(message.text)
                 reply = "The image url is \n" + url
                 bot.send_message(message.chat.id, reply)
             else:
                 print("images_edit")
 
-                url = imgs(message.text)
+                url = predict(message.text)
                 reply = "The image url is \n" + url
                 bot.send_message(message.chat.id, reply)
 

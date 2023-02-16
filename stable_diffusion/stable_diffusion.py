@@ -41,7 +41,7 @@ def predict(prompt):
         # 'seed': ...,
     }
     output = version.predict(**inputs)
-    return output
+    return output[0]
 
 
 def generate(prompt):
