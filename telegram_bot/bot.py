@@ -11,7 +11,6 @@ main_menu_text = (
     "Click */ask* - _Ask me anything._\n"
     "Click */conversation* - _Start a new conversation_\n"
     "Click */images* - _Generate images by given prompt._\n"
-    "Click */end* - _End the conversation or images._\n"
     "Click */help* - _You can use it for help_\n"
     "\n"
     "Contact: zwqueena@163.com\n"
@@ -25,7 +24,9 @@ ask_help_text = (
 )
 conversation_help_text = (
     "/conversation\n"
-    "   *start a conversation* - _You can use the conversation command and I will have a conversation with you. (PS: At present, the bot is still unable to memorize all your inputs, and can only generate reply based on its last reply and your latest input)_\n"
+    "   *start a conversation* - _You can use the conversation command and I will have a conversation with you. "
+    "(PS: Currently, the maximum token count permitted for a conversation is 500, which roughly translates to 350 words. "
+    "When the limit is exceeded, the bot will prompt you and output a log of your conversation.)_\n"
 )
 
 images_help_text = (
@@ -42,7 +43,12 @@ button_description = {
     "ask_help": ask_help_text,
     "help": help_text,
 }
+
+token_limit_text = (
+    "*Token limit*\n" "_Since the token of the current prompt has exceeded the limit_"
+)
 user_map = {}
+MAX_WORDS = 350
 
 
 def bot_run():
@@ -119,31 +125,43 @@ def bot_run():
 
         if user.mode == "ask":
             print("ask")
-            reply = completions(message.text)
-            # sometimes the reply will start with the ? or . or !, so remove it
-            if reply[0] in ["?", ".", "!"]:
-                reply = reply[1:]
+            prompt = "Human: " + message.text + "\nAI:"
+            if count_words(prompt) > MAX_WORDS:
+                bot.send_message(
+                    message.chat.id,
+                    token_limit_text,
+                    parse_mode="Markdown",
+                )
+                return
+            reply = completions(prompt=prompt)
             bot.send_message(message.chat.id, reply)
             print("ask_reply: ", reply)
             return
         elif user.mode == "conversation":
             previous_message = user.previous_message
-            if previous_message == "":
-                reply = completions(message.text)
-            else:
-                reply = edits(previous_message, message.text)
-                # remove the previous message in reply
-                if previous_message in reply:
-                    reply = reply.replace(previous_message, "")
-            print("before conversation previous_message: ", previous_message)
-            update_user_map(
-                message.from_user.id, previous_message=reply, mode="conversation"
-            )
-            print(
-                "after conversation previous_message: ",
-                user_map[message.from_user.id].previous_message,
-            )
+            prompt = previous_message + "Human: " + message.text + "\nAI:"
+            reply = completions(prompt=prompt)
+            print("conversation_reply: ", reply)
+            previous_message = prompt + reply + "\n"
             bot.send_message(message.chat.id, reply)
+            if count_words(previous_message) > MAX_WORDS:
+                bot.send_message(
+                    message.chat.id,
+                    token_limit_text,
+                    parse_mode="Markdown",
+                )
+                bot.send_message(
+                    message.chat.id,
+                    "Here is your *conversation history*:\n" + previous_message,
+                    parse_mode="Markdown",
+                )
+                update_user_map(message.from_user.id, mode="ask")
+                return
+            update_user_map(
+                message.from_user.id,
+                previous_message=previous_message,
+                mode="conversation",
+            )
             return
         elif user.mode == "images":
             print("images")
@@ -156,7 +174,7 @@ def bot_run():
             os.remove(img_path)
             return
 
-    bot.infinity_polling(logger_level=logging.DEBUG)
+    bot.infinity_polling(skip_pending=True, logger_level=logging.DEBUG)
 
 
 def help_mark_up():
@@ -180,3 +198,7 @@ def update_user_map(id, **kwargs):
     for key, value in kwargs.items():
         setattr(user_map[id], key, value)
     return
+
+
+def count_words(text):
+    return len(text.split())

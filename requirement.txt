@@ -3,3 +3,5 @@ pyTelegramBotAPI >= 4.10.0
 black >= 23.1.0
 autoflake8 >= 0.4.0
 replicate >= 0.4.0
+stability_sdk >= 0.3.2 
+coloredlogs >= 15.0.1
