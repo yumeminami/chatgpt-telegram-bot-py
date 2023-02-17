@@ -4,7 +4,7 @@ import logging
 from chatgpt.completions import completions
 from chatgpt.edits import edits
 from stable_diffusion.stable_diffusion import generate
-from user.user import User,user_map
+from user.user import User, user_map
 
 main_menu_text = (
     "*Main Menu*\n"
@@ -14,7 +14,7 @@ main_menu_text = (
     "Click */end* - _End the conversation or images._\n"
     "Click */help* - _You can use it for help_\n"
     "\n"
-    "Contact: *zwqueena@163.com"
+    "Contact: zwqueena@163.com\n"
 )
 
 help_text = "*Click the button then will explain the relative function usage*"
@@ -34,7 +34,7 @@ images_help_text = (
 )
 
 button_description = {
-    "ask" : "You can ask me anything.",
+    "ask": "You can ask me anything.",
     "conversation": "Let's start a converastion.",
     "images": "Give me a prompt and I will generate the image. The generation process may take a while.",
     "conversation_help": conversation_help_text,
@@ -52,7 +52,6 @@ def bot_run():
         colorful_logs=True,
     )
 
-
     print("Authorized on account {}".format(os.getenv("TELEGRAM_BOT_TOKEN")))
 
     @bot.message_handler(commands=["start"])
@@ -62,7 +61,9 @@ def bot_run():
         conversation_button = telebot.types.InlineKeyboardButton(
             "Conversation", callback_data="conversation"
         )
-        images_button = telebot.types.InlineKeyboardButton("Images", callback_data="images")
+        images_button = telebot.types.InlineKeyboardButton(
+            "Images", callback_data="images"
+        )
         help_button = telebot.types.InlineKeyboardButton("Help", callback_data="help")
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(ask_button, conversation_button, images_button)
@@ -72,7 +73,7 @@ def bot_run():
         )
         return
 
-    @bot.message_handler(commands=["conversation", "images","ask"])
+    @bot.message_handler(commands=["conversation", "images", "ask"])
     def command_handler(message):
         update_user_map(message.from_user.id, mode=message.text[1:])
         bot.send_message(message.chat.id, button_description[message.text[1:]])
@@ -113,7 +114,7 @@ def bot_run():
         bot.send_chat_action(message.chat.id, "typing")
         if message.from_user.id not in user_map:
             user_map[message.from_user.id] = User(message.from_user.id)
-        
+
         user = user_map[message.from_user.id]
 
         if user.mode == "ask":
@@ -133,10 +134,15 @@ def bot_run():
                 reply = edits(previous_message, message.text)
                 # remove the previous message in reply
                 if previous_message in reply:
-                    reply = reply.replace(previous_message, "")  
+                    reply = reply.replace(previous_message, "")
             print("before conversation previous_message: ", previous_message)
-            update_user_map(message.from_user.id, previous_message=reply, mode="conversation")
-            print("after conversation previous_message: ", user_map[message.from_user.id].previous_message)
+            update_user_map(
+                message.from_user.id, previous_message=reply, mode="conversation"
+            )
+            print(
+                "after conversation previous_message: ",
+                user_map[message.from_user.id].previous_message,
+            )
             bot.send_message(message.chat.id, reply)
             return
         elif user.mode == "images":
@@ -153,7 +159,6 @@ def bot_run():
     bot.infinity_polling(logger_level=logging.DEBUG)
 
 
-
 def help_mark_up():
     btn1 = telebot.types.InlineKeyboardButton(
         "Conversation", callback_data="conversation_help"
@@ -161,11 +166,11 @@ def help_mark_up():
     btn2 = telebot.types.InlineKeyboardButton("Images", callback_data="images_help")
     btn_3 = telebot.types.InlineKeyboardButton("Ask", callback_data="ask_help")
     markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(btn_3,btn1, btn2)
+    markup.add(btn_3, btn1, btn2)
     return markup
 
 
-def update_user_map(id,**kwargs):
+def update_user_map(id, **kwargs):
     global user_map
     try:
         del user_map[id]
