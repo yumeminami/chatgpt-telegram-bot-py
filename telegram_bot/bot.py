@@ -4,41 +4,45 @@ import logging
 from chatgpt.completions import completions
 from chatgpt.edits import edits
 from stable_diffusion.stable_diffusion import generate
+from user.user import User,user_map
 
 main_menu_text = (
     "*Main Menu*\n"
+    "Click */ask* - _Ask me anything._\n"
     "Click */conversation* - _Start a new conversation_\n"
     "Click */images* - _Generate images by given prompt._\n"
     "Click */end* - _End the conversation or images._\n"
-    "Click */help* - _You can use it for help_"
+    "Click */help* - _You can use it for help_\n"
+    "\n"
+    "Contact: *zwqueena@163.com"
 )
 
-help_text = "*What you want to know?*"
+help_text = "*Click the button then will explain the relative function usage*"
 
+ask_help_text = (
+    "/ask\n"
+    "   *ask me anything* - _You can use the ask command then input something then I will answer._\n"
+)
 conversation_help_text = (
     "/conversation\n"
-    "   *start a conversation* - _You can use the conversation command or directly input something then start a conversation._\n"
-    "   *new another conversation* - _If you want to end the current conversation and new a conversation, you can reuse the conversation command or end command_.\n"
+    "   *start a conversation* - _You can use the conversation command and I will have a conversation with you. (PS: At present, the bot is still unable to memorize all your inputs, and can only generate reply based on its last reply and your latest input)_\n"
 )
 
 images_help_text = (
     "/images\n"
     "   *generate images* - _You can use the images command then input something then generate images._\n"
-    "   *generate images by edit* - _After you have generated a image, you can continue to input something and the bot will regenerate the image based on the previous image and your description._\n"
-    "   *new another images* - _If you want to end the current images edtion and new a images, you can reuse the images command or end command_.\n"
 )
 
 button_description = {
-    "conversation": "Let's start a converastion. You can ask me anything. If you want to new another the conversation, you need to click 'end' in the menu, otherwise, it will reply to you based on the previous content. ",
+    "ask" : "You can ask me anything.",
+    "conversation": "Let's start a converastion.",
     "images": "Give me a prompt and I will generate the image. The generation process may take a while.",
     "conversation_help": conversation_help_text,
     "images_help": images_help_text,
+    "ask_help": ask_help_text,
     "help": help_text,
-    "end": "Now you new another conversation or can generate another image",
 }
-previous_message_map = {}
-previous_photo = None
-mode = "conversation"
+user_map = {}
 
 
 def bot_run():
@@ -46,33 +50,31 @@ def bot_run():
         token=os.getenv("TELEGRAM_BOT_TOKEN"),
         skip_pending=True,
         colorful_logs=True,
-        num_threads=4,
     )
+
 
     print("Authorized on account {}".format(os.getenv("TELEGRAM_BOT_TOKEN")))
 
     @bot.message_handler(commands=["start"])
     def start(message):
         # print(message)
-        btn1 = telebot.types.InlineKeyboardButton(
+        ask_button = telebot.types.InlineKeyboardButton("Ask", callback_data="ask")
+        conversation_button = telebot.types.InlineKeyboardButton(
             "Conversation", callback_data="conversation"
         )
-        btn2 = telebot.types.InlineKeyboardButton("Images", callback_data="images")
-        btn3 = telebot.types.InlineKeyboardButton("Help", callback_data="help")
+        images_button = telebot.types.InlineKeyboardButton("Images", callback_data="images")
+        help_button = telebot.types.InlineKeyboardButton("Help", callback_data="help")
         markup = telebot.types.InlineKeyboardMarkup()
-        markup.add(btn1, btn2)
-        markup.add(btn3)
+        markup.add(ask_button, conversation_button, images_button)
+        markup.add(help_button)
         bot.send_message(
             message.chat.id, main_menu_text, parse_mode="Markdown", reply_markup=markup
         )
         return
 
-    @bot.message_handler(commands=["conversation", "images", "end"])
-    def conversation_or_end(message):
-        global previous_message_map, mode, previous_photo
-        handle_previous_message(message.from_user.id)
-        mode = "images" if message.text == "/images" else "conversation"
-        previous_photo = None
+    @bot.message_handler(commands=["conversation", "images","ask"])
+    def command_handler(message):
+        update_user_map(message.from_user.id, mode=message.text[1:])
         bot.send_message(message.chat.id, button_description[message.text[1:]])
         return
 
@@ -88,13 +90,8 @@ def bot_run():
 
     @bot.callback_query_handler(func=lambda call: True)
     def callback_query(call):
-        global previous_message_map, previous_photo, mode
         bot.answer_callback_query(call.id)
-        if call.data == "conversation" or call.data == "images":
-            previous_photo = None
-            handle_previous_message(call.from_user.id)
-            mode = call.data
-        elif call.data == "help":
+        if call.data == "help":
             bot.edit_message_text(
                 text=button_description[call.data],
                 parse_mode="Markdown",
@@ -103,6 +100,7 @@ def bot_run():
                 reply_markup=help_mark_up(),
             )
             return
+        update_user_map(call.from_user.id, mode=call.data)
         bot.send_message(
             call.message.chat.id,
             text=button_description[call.data],
@@ -112,23 +110,37 @@ def bot_run():
     @bot.message_handler(content_types=["text"])
     @bot.edited_message_handler(content_types=["text"])
     def handle_text(message):
-        global previous_message_map, previous_photo, mode
         bot.send_chat_action(message.chat.id, "typing")
-        if mode == "conversation":
-            if message.from_user.id not in previous_message_map:
+        if message.from_user.id not in user_map:
+            user_map[message.from_user.id] = User(message.from_user.id)
+        
+        user = user_map[message.from_user.id]
+
+        if user.mode == "ask":
+            print("ask")
+            reply = completions(message.text)
+            # sometimes the reply will start with the ? or . or !, so remove it
+            if reply[0] in ["?", ".", "!"]:
+                reply = reply[1:]
+            bot.send_message(message.chat.id, reply)
+            print("ask_reply: ", reply)
+            return
+        elif user.mode == "conversation":
+            previous_message = user.previous_message
+            if previous_message == "":
                 reply = completions(message.text)
-                print("completions: ", reply)
             else:
-                previous_message = previous_message_map[message.from_user.id]
                 reply = edits(previous_message, message.text)
-                # the reply contains the previous message so we need to remove it
-                reply = reply.replace(previous_message, "")
-                print("edits: ", reply)
-            previous_message_map[message.from_user.id] = reply
+                # remove the previous message in reply
+                if previous_message in reply:
+                    reply = reply.replace(previous_message, "")  
+            print("before conversation previous_message: ", previous_message)
+            update_user_map(message.from_user.id, previous_message=reply, mode="conversation")
+            print("after conversation previous_message: ", user_map[message.from_user.id].previous_message)
             bot.send_message(message.chat.id, reply)
             return
-
-        elif mode == "images":
+        elif user.mode == "images":
+            print("images")
             img_path = generate(message.text)
             bot.send_photo(
                 message.chat.id,
@@ -141,18 +153,25 @@ def bot_run():
     bot.infinity_polling(logger_level=logging.DEBUG)
 
 
-def handle_previous_message(id):
-    if id in previous_message_map:
-        del previous_message_map[id]
-    else:
-        pass
-
 
 def help_mark_up():
     btn1 = telebot.types.InlineKeyboardButton(
         "Conversation", callback_data="conversation_help"
     )
     btn2 = telebot.types.InlineKeyboardButton("Images", callback_data="images_help")
+    btn_3 = telebot.types.InlineKeyboardButton("Ask", callback_data="ask_help")
     markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(btn1, btn2)
+    markup.add(btn_3,btn1, btn2)
     return markup
+
+
+def update_user_map(id,**kwargs):
+    global user_map
+    try:
+        del user_map[id]
+    except:
+        pass
+    user_map[id] = User(id)
+    for key, value in kwargs.items():
+        setattr(user_map[id], key, value)
+    return
