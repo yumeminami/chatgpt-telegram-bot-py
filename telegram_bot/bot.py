@@ -1,8 +1,9 @@
 import os
 import telebot
+import logging
 from chatgpt.completions import completions
 from chatgpt.edits import edits
-from stable_diffusion.stable_diffusion import predict
+from stable_diffusion.stable_diffusion import generate
 
 main_menu_text = (
     "*Main Menu*\n"
@@ -29,7 +30,7 @@ images_help_text = (
 
 button_description = {
     "conversation": "Let's start a converastion. You can ask me anything. If you want to new another the conversation, you need to click 'end' in the menu, otherwise, it will reply to you based on the previous content. ",
-    "images": "Give me a prompt and I will generate an image.",
+    "images": "Give me a prompt and I will generate the image. The generation process may take a while.",
     "conversation_help": conversation_help_text,
     "images_help": images_help_text,
     "help": help_text,
@@ -41,8 +42,12 @@ mode = "conversation"
 
 
 def bot_run():
-    bot = telebot.TeleBot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
-    # bot.get_updates(1).clear()
+    bot = telebot.TeleBot(
+        token=os.getenv("TELEGRAM_BOT_TOKEN"),
+        skip_pending=True,
+        colorful_logs=True,
+        num_threads=4,
+    )
 
     print("Authorized on account {}".format(os.getenv("TELEGRAM_BOT_TOKEN")))
 
@@ -52,8 +57,7 @@ def bot_run():
         btn1 = telebot.types.InlineKeyboardButton(
             "Conversation", callback_data="conversation"
         )
-        btn2 = telebot.types.InlineKeyboardButton(
-            "Images", callback_data="images")
+        btn2 = telebot.types.InlineKeyboardButton("Images", callback_data="images")
         btn3 = telebot.types.InlineKeyboardButton("Help", callback_data="help")
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(btn1, btn2)
@@ -125,12 +129,16 @@ def bot_run():
             return
 
         elif mode == "images":
-            url = predict(message.text)
-            reply = "The image url is \n" + url
-            bot.send_message(message.chat.id, reply)
+            img_path = generate(message.text)
+            bot.send_photo(
+                message.chat.id,
+                photo=telebot.types.InputFile(img_path),
+                reply_to_message_id=message.message_id,
+            )
+            os.remove(img_path)
             return
 
-    bot.infinity_polling()
+    bot.infinity_polling(logger_level=logging.DEBUG)
 
 
 def handle_previous_message(id):
@@ -144,8 +152,7 @@ def help_mark_up():
     btn1 = telebot.types.InlineKeyboardButton(
         "Conversation", callback_data="conversation_help"
     )
-    btn2 = telebot.types.InlineKeyboardButton(
-        "Images", callback_data="images_help")
+    btn2 = telebot.types.InlineKeyboardButton("Images", callback_data="images_help")
     markup = telebot.types.InlineKeyboardMarkup()
     markup.add(btn1, btn2)
     return markup
