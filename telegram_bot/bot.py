@@ -122,7 +122,7 @@ def bot_run():
 
         user = user_map[message.from_user.id]
 
-        prompt = "Human: " + message.text + "\nAI:"
+        prompt = "*Human: *" + message.text + "\n*AI: *"
         if user.mode == "ask":
             print("ask")
             if count_words(prompt) > MAX_WORDS:
