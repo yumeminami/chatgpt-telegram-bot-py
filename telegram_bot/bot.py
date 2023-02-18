@@ -15,7 +15,7 @@ main_menu_text = (
     "Contact: fengrongman@gmail.com\n"
 )
 
-help_text = "*Click the button then will explain the relative function usage*"
+help_text = "*Click the button then will show the relative function usage*"
 
 ask_help_text = (
     "/ask\n"
@@ -58,6 +58,9 @@ def bot_run():
     )
 
     print("Authorized on account {}".format(os.getenv("TELEGRAM_BOT_TOKEN")))
+    # commands = bot.get_my_commands()
+    # for command in commands:
+    #     print(command.command + " - " + command.description)
 
     @bot.message_handler(commands=["start"])
     def start(message):
