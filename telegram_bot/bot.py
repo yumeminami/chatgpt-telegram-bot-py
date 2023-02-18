@@ -2,7 +2,6 @@ import os
 import telebot
 import logging
 from chatgpt.completions import completions
-from chatgpt.edits import edits
 from stable_diffusion.stable_diffusion import generate
 from user.user import User, user_map
 
@@ -123,9 +122,9 @@ def bot_run():
 
         user = user_map[message.from_user.id]
 
+        prompt = "Human: " + message.text + "\nAI:"
         if user.mode == "ask":
             print("ask")
-            prompt = "Human: " + message.text + "\nAI:"
             if count_words(prompt) > MAX_WORDS:
                 bot.send_message(
                     message.chat.id,
@@ -139,7 +138,7 @@ def bot_run():
             return
         elif user.mode == "conversation":
             previous_message = user.previous_message
-            prompt = previous_message + "Human: " + message.text + "\nAI:"
+            prompt = previous_message + prompt
             reply = completions(prompt=prompt)
             print("conversation_reply: ", reply)
             previous_message = prompt + reply + "\n"
