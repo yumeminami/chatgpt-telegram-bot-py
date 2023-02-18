@@ -12,7 +12,7 @@ main_menu_text = (
     "Click */images* - _Generate images by given prompt._\n"
     "Click */help* - _You can use it for help_\n"
     "\n"
-    "Contact: zwqueena@163.com\n"
+    "Contact: fengrongman@gmail.com\n"
 )
 
 help_text = "*Click the button then will explain the relative function usage*"
