@@ -4,6 +4,7 @@ import logging
 from chatgpt.completions import completions
 from stable_diffusion.stable_diffusion import generate
 from user.user import User, user_map
+from utils.token import count_token
 
 main_menu_text = (
     "*Main Menu*\n"
@@ -47,7 +48,7 @@ token_limit_text = (
     "*Token limit*\n" "_Since the token of the current prompt has exceeded the limit_"
 )
 user_map = {}
-MAX_WORDS = 350
+MAX_TOKEN = 800
 
 
 def bot_run():
@@ -125,10 +126,11 @@ def bot_run():
 
         user = user_map[message.from_user.id]
 
-        prompt = "*Human: *" + message.text + "\n*AI: *"
+        prompt = "Human: " + message.text + "\nAI: "
+        print("prompt token: ", count_token(prompt))
         if user.mode == "ask":
             print("ask")
-            if count_words(prompt) > MAX_WORDS:
+            if count_token(prompt) > MAX_TOKEN:
                 bot.send_message(
                     message.chat.id,
                     token_limit_text,
@@ -137,16 +139,16 @@ def bot_run():
                 return
             reply = completions(prompt=prompt)
             bot.send_message(message.chat.id, reply)
-            print("ask_reply: ", reply)
             return
         elif user.mode == "conversation":
+            print("conversation")
             previous_message = user.previous_message
             prompt = previous_message + prompt
             reply = completions(prompt=prompt)
-            print("conversation_reply: ", reply)
             previous_message = prompt + reply + "\n"
             bot.send_message(message.chat.id, reply)
-            if count_words(previous_message) > MAX_WORDS:
+            print("previous_message token: ", count_token(previous_message))
+            if count_token(previous_message) > MAX_TOKEN:
                 bot.send_message(
                     message.chat.id,
                     token_limit_text,
