@@ -1,6 +1,6 @@
 from user.user import User
 import tiktoken
-
+from utils.redis import GetRedis, SetRedis,InitRedis
 test_map = {}
 
 
@@ -27,9 +27,13 @@ def main():
     # print(test_map[1].user_id)
     # print(test_map[1].previous_message)
     # print(test_map[1].mode)
-    # print(count_words("我爱你"))
-    enc = tiktoken.encoding_for_model("text-davinci-003")
-    print(len(enc.encode_ordinary("")))
+    # enc = tiktoken.encoding_for_model("text-davinci-003")
+    # print(len(enc.encode_ordinary("")))
+
+    InitRedis()
+    SetRedis("test","test")
+    print(GetRedis("test"))
+
 
 
 if __name__ == "__main__":
