@@ -16,7 +16,6 @@ main_menu_text = (
     "Contact: fengrongman@gmail.com\n"
 )
 
-help_text = "*Click the button then will show the relative function usage*"
 
 ask_help_text = (
     "/ask\n"
@@ -25,7 +24,7 @@ ask_help_text = (
 conversation_help_text = (
     "/conversation\n"
     "   *start a conversation* - _You can use the conversation command and I will have a conversation with you. "
-    "(PS: Currently, the maximum token count permitted for a conversation is 500, which roughly translates to 350 words. "
+    "(PS: Currently, the maximum token count permitted for a conversation is 1000, which roughly translates to 700 words. "
     "When the limit is exceeded, the bot will prompt you and output a log of your conversation.)_\n"
 )
 
@@ -41,12 +40,17 @@ button_description = {
     "conversation_help": conversation_help_text,
     "images_help": images_help_text,
     "ask_help": ask_help_text,
-    "help": help_text,
+    "help": "Instruction",
 }
 
 token_limit_text = (
     "*Token limit*\n" "_Since the token of the current prompt has exceeded the limit_"
 )
+
+help_text = (
+    "*Instruction:*\n" + ask_help_text + conversation_help_text + images_help_text
+)
+
 user_map = {}
 MAX_TOKEN = 800
 
@@ -66,14 +70,14 @@ def bot_run():
     @bot.message_handler(commands=["start"])
     def start(message):
         # print(message)
-        ask_button = telebot.types.InlineKeyboardButton("Ask", callback_data="ask")
+        ask_button = telebot.types.InlineKeyboardButton("💬Ask", callback_data="ask")
         conversation_button = telebot.types.InlineKeyboardButton(
-            "Conversation", callback_data="conversation"
+            "📢Conversation", callback_data="conversation"
         )
         images_button = telebot.types.InlineKeyboardButton(
-            "Images", callback_data="images"
+            "🎨Images", callback_data="images"
         )
-        help_button = telebot.types.InlineKeyboardButton("Help", callback_data="help")
+        help_button = telebot.types.InlineKeyboardButton("❓Help", callback_data="help")
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(ask_button, conversation_button, images_button)
         markup.add(help_button)
@@ -92,9 +96,8 @@ def bot_run():
     def help(message):
         bot.send_message(
             message.chat.id,
-            help_text,
+            text=help_text,
             parse_mode="Markdown",
-            reply_markup=help_mark_up(),
         )
         return
 
@@ -102,12 +105,11 @@ def bot_run():
     def callback_query(call):
         bot.answer_callback_query(call.id)
         if call.data == "help":
-            bot.edit_message_text(
-                text=button_description[call.data],
+            bot.send_message(
+                text=help_text,
                 parse_mode="Markdown",
                 chat_id=call.message.chat.id,
-                message_id=call.message.id,
-                reply_markup=help_mark_up(),
+                # reply_markup=help_mark_up(),
             )
             return
         update_user_map(call.from_user.id, mode=call.data)
@@ -126,7 +128,7 @@ def bot_run():
 
         user = user_map[message.from_user.id]
 
-        prompt = "Human: " + message.text + "\nAI: "
+        prompt = "Human: " + message.text + "\n" + "AI: "
         print("prompt token: ", count_token(prompt))
         if user.mode == "ask":
             print("ask")
@@ -179,17 +181,6 @@ def bot_run():
             return
 
     bot.infinity_polling(skip_pending=True, logger_level=logging.DEBUG)
-
-
-def help_mark_up():
-    btn1 = telebot.types.InlineKeyboardButton(
-        "Conversation", callback_data="conversation_help"
-    )
-    btn2 = telebot.types.InlineKeyboardButton("Images", callback_data="images_help")
-    btn_3 = telebot.types.InlineKeyboardButton("Ask", callback_data="ask_help")
-    markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(btn_3, btn1, btn2)
-    return markup
 
 
 def update_user_map(id, **kwargs):
