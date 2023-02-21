@@ -2,7 +2,7 @@ version: '3'
 services:
   redis:
     image: redis:4.0.1
-    container_name: redis-label
+    container_name: redis
     volumes:
       - /redis/data:/data
       - /redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
@@ -15,7 +15,7 @@ services:
     image: chatbot:latest
     container_name: chatbot
     volumes:
-      - /config:/config
+      - ~/chatgpt-telegram-bot-py:/bot
     command: python3 main.py
     depends_on:
       - redis

@@ -9,8 +9,11 @@ from utils.token import count_token
 main_menu_text = (
     "*Main Menu*\n"
     "Click */ask* - _Ask me anything._\n"
+    "\n"
     "Click */conversation* - _Start a new conversation_\n"
+    "\n"
     "Click */images* - _Generate images by given prompt._\n"
+    "\n"
     "Click */help* - _You can use it for help_\n"
     "\n"
     "Contact: fengrongman@gmail.com\n"

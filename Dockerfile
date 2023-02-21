@@ -2,7 +2,7 @@
 
 FROM python:3.10.6-slim-buster
 
-WORKDIR /app
+WORKDIR /bot
 
 RUN echo  "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ buster main contrib non-free" >/etc/apt/sources.list
 RUN echo  "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ buster-updates main contrib non-free" >>/etc/apt/sources.list
