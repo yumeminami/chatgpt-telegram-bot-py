@@ -15,7 +15,7 @@ services:
     image: chatbot:latest
     container_name: chatbot
     volumes:
-      - ~/chatgpt-telegram-bot-py:/bot
+      - ~/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
     command: python3 main.py
     depends_on:
       - redis
