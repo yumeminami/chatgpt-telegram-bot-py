@@ -3,8 +3,9 @@ import telebot
 import logging
 from chatgpt.completions import completions
 from stable_diffusion.stable_diffusion import generate
-from user.user import User, user_map
+from user.user import User, user_map, update_user, check_user, get_user
 from utils.token import count_token
+import re
 
 main_menu_text = (
     "*Main Menu*\n"
@@ -56,7 +57,7 @@ help_text = (
 
 user_map = {}
 MAX_TOKEN = 800
-
+EMAIL_REGEX_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
 def bot_run():
     bot = telebot.TeleBot(
@@ -69,7 +70,9 @@ def bot_run():
     # commands = bot.get_my_commands()
     # for command in commands:
     #     print(command.command + " - " + command.description)
-
+    # update = telebot.types.Update.de_json(request.get_data().decode("utf-8"))
+    # bot.process_new_updates([update])
+    
     @bot.message_handler(commands=["start"])
     def start(message):
         # print(message)
@@ -80,9 +83,11 @@ def bot_run():
         images_button = telebot.types.InlineKeyboardButton(
             "🎨Images", callback_data="images"
         )
+        subscribe_button = telebot.types.InlineKeyboardButton("🌟 Subscription", callback_data="subscription")
         help_button = telebot.types.InlineKeyboardButton("❓Help", callback_data="help")
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(ask_button, conversation_button, images_button)
+        markup.add(subscribe_button)
         markup.add(help_button)
         bot.send_message(
             message.chat.id, main_menu_text, parse_mode="Markdown", reply_markup=markup
@@ -103,24 +108,79 @@ def bot_run():
             parse_mode="Markdown",
         )
         return
+    
+    # handle callback data is subscription
+    @bot.callback_query_handler(func=lambda call: call.data == "subscription")
+    def subscription(call):
+        bot.answer_callback_query(call.id)
+        user = get_user(call.from_user.id)
+        if user is None:
+            bot.send_message(
+                text="Please enter your email address",
+                parse_mode="Markdown",
+                chat_id=call.message.chat.id,
+            )
+            return
+        general_subscription_button = telebot.types.InlineKeyboardButton(
+            "💳General Subscription", url="https://buy.stripe.com/test_7sI3dufsW7KY1eo7st"
+        )
+        pro_subscription_button = telebot.types.InlineKeyboardButton(
+            "💳PRO Subscription", url="https://buy.stripe.com/test_7sI3dufsW7KY1eo7st"
+        )
+
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(general_subscription_button, pro_subscription_button)
+        bot.send_message(
+            chat_id=call.message.chat.id,
+            text="*Subscription*\n",
+            parse_mode="Markdown",
+            reply_markup=markup,
+        )
+        return
+
+
+    @bot.callback_query_handler(func=lambda call: call.data == "help")
+    def help(call):
+        bot.answer_callback_query(call.id)
+        bot.send_message(
+            text=help_text,
+            parse_mode="Markdown",
+            chat_id=call.message.chat.id,
+        )
+        return
+    
 
     @bot.callback_query_handler(func=lambda call: True)
     def callback_query(call):
         bot.answer_callback_query(call.id)
-        if call.data == "help":
-            bot.send_message(
-                text=help_text,
-                parse_mode="Markdown",
-                chat_id=call.message.chat.id,
-                # reply_markup=help_mark_up(),
-            )
-            return
         update_user_map(call.from_user.id, mode=call.data)
         bot.send_message(
             call.message.chat.id,
             text=button_description[call.data],
             parse_mode="Markdown",
         )
+    
+    # handle email
+    @bot.message_handler(regexp=EMAIL_REGEX_PATTERN)
+    def handle_email(message):
+        bot.send_chat_action(message.chat.id, "typing")
+        user = get_user(message.from_user.id)
+        if user is None:
+            update_user(message.from_user.id, email=message.text)
+            bot.send_message(
+                text="Update email success.",
+                parse_mode="Markdown",
+                chat_id=message.chat.id,
+            )
+        else:
+            update_user(message.from_user.id, email=message.text)
+            bot.send_message(
+                text="Update email success.",
+                parse_mode="Markdown",
+                chat_id=message.chat.id,
+            )
+        return
+    
 
     @bot.message_handler(content_types=["text"])
     @bot.edited_message_handler(content_types=["text"])
@@ -182,6 +242,8 @@ def bot_run():
             )
             os.remove(img_path)
             return
+    
+  
 
     bot.infinity_polling(skip_pending=True, logger_level=logging.DEBUG)
 
@@ -198,5 +260,3 @@ def update_user_map(id, **kwargs):
     return
 
 
-def count_words(text):
-    return len(text.split())
