@@ -4,18 +4,18 @@ services:
     image: redis:4.0.1
     container_name: redis
     volumes:
-      - /redis/data:/data
-      - /redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
-      - /redis/logs:/logs
+      - ~/redis/data:/data
+      - ~/redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - ~/redis/logs:/logs
     command: redis-server --requirepass frM991103
     ports:
       - 6379:6379
     
   chatbot:
-    image: chatbot:latest
+    image: rongmanfeng/chatbot:latest
     container_name: chatbot
     volumes:
-      - ~/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
+      - ~/workspace/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
     command: python3 main.py
     depends_on:
       - redis

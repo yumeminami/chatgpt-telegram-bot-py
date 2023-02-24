@@ -3,9 +3,11 @@ import telebot
 import logging
 from chatgpt.completions import completions
 from stable_diffusion.stable_diffusion import generate
-from user.user import User, user_map, update_user, check_user, get_user
+from user.user import User, get_user, update_user, user_map
 from utils.token import count_token
-import re
+from utils.redis import get_redis_client
+from telegram_bot.text import standard_subscripition, pro_subscription, subscription_note
+
 
 main_menu_text = (
     "*Main Menu*\n"
@@ -57,14 +59,20 @@ help_text = (
 
 user_map = {}
 MAX_TOKEN = 800
-EMAIL_REGEX_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+EMAIL_REGEX_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
-def bot_run():
-    bot = telebot.TeleBot(
-        token=os.getenv("TELEGRAM_BOT_TOKEN"),
-        skip_pending=True,
-        colorful_logs=True,
-    )
+bot = telebot.TeleBot(
+    token="6212169703:AAExFIETNFl2lEQ9DeJkuJEsug0aLMSYBlE",
+    skip_pending=True,
+    colorful_logs=True,
+)
+
+
+def get_bot():
+    return bot
+
+
+def run_bot():
 
     print("Authorized on account {}".format(os.getenv("TELEGRAM_BOT_TOKEN")))
     # commands = bot.get_my_commands()
@@ -72,7 +80,7 @@ def bot_run():
     #     print(command.command + " - " + command.description)
     # update = telebot.types.Update.de_json(request.get_data().decode("utf-8"))
     # bot.process_new_updates([update])
-    
+
     @bot.message_handler(commands=["start"])
     def start(message):
         # print(message)
@@ -83,7 +91,9 @@ def bot_run():
         images_button = telebot.types.InlineKeyboardButton(
             "🎨Images", callback_data="images"
         )
-        subscribe_button = telebot.types.InlineKeyboardButton("🌟 Subscription", callback_data="subscription")
+        subscribe_button = telebot.types.InlineKeyboardButton(
+            "🌟 Subscription", callback_data="subscription"
+        )
         help_button = telebot.types.InlineKeyboardButton("❓Help", callback_data="help")
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(ask_button, conversation_button, images_button)
@@ -108,36 +118,39 @@ def bot_run():
             parse_mode="Markdown",
         )
         return
-    
+
     # handle callback data is subscription
     @bot.callback_query_handler(func=lambda call: call.data == "subscription")
     def subscription(call):
         bot.answer_callback_query(call.id)
         user = get_user(call.from_user.id)
+        print(user)
         if user is None:
             bot.send_message(
                 text="Please enter your email address",
                 parse_mode="Markdown",
                 chat_id=call.message.chat.id,
+                
             )
+            
             return
-        general_subscription_button = telebot.types.InlineKeyboardButton(
-            "💳General Subscription", url="https://buy.stripe.com/test_7sI3dufsW7KY1eo7st"
+        standard_subscription_button = telebot.types.InlineKeyboardButton(
+            "💳Standard",
+            url="https://buy.stripe.com/test_7sI3dufsW7KY1eo7st",
         )
         pro_subscription_button = telebot.types.InlineKeyboardButton(
-            "💳PRO Subscription", url="https://buy.stripe.com/test_7sI3dufsW7KY1eo7st"
+            "💳PRO", url="https://buy.stripe.com/test_7sI3dufsW7KY1eo7st"
         )
 
         markup = telebot.types.InlineKeyboardMarkup()
-        markup.add(general_subscription_button, pro_subscription_button)
+        markup.add(standard_subscription_button, pro_subscription_button)
         bot.send_message(
             chat_id=call.message.chat.id,
-            text="*Subscription*\n",
+            text=standard_subscripition+"\n"+pro_subscription+"\n"+subscription_note,
             parse_mode="Markdown",
             reply_markup=markup,
         )
         return
-
 
     @bot.callback_query_handler(func=lambda call: call.data == "help")
     def help(call):
@@ -148,7 +161,6 @@ def bot_run():
             chat_id=call.message.chat.id,
         )
         return
-    
 
     @bot.callback_query_handler(func=lambda call: True)
     def callback_query(call):
@@ -159,28 +171,35 @@ def bot_run():
             text=button_description[call.data],
             parse_mode="Markdown",
         )
-    
+
     # handle email
     @bot.message_handler(regexp=EMAIL_REGEX_PATTERN)
     def handle_email(message):
         bot.send_chat_action(message.chat.id, "typing")
         user = get_user(message.from_user.id)
+        redis_client = get_redis_client()
         if user is None:
             update_user(message.from_user.id, email=message.text)
+            redis_client.hset(
+                name="email_to_chat_id", key=message.text, value=message.chat.id
+            )
             bot.send_message(
                 text="Update email success.",
                 parse_mode="Markdown",
                 chat_id=message.chat.id,
             )
+
         else:
             update_user(message.from_user.id, email=message.text)
+            redis_client.hset(
+                name="email_to_chat_id", key=message.text, value=message.chat.id
+            )
             bot.send_message(
                 text="Update email success.",
                 parse_mode="Markdown",
                 chat_id=message.chat.id,
             )
         return
-    
 
     @bot.message_handler(content_types=["text"])
     @bot.edited_message_handler(content_types=["text"])
@@ -242,8 +261,6 @@ def bot_run():
             )
             os.remove(img_path)
             return
-    
-  
 
     bot.infinity_polling(skip_pending=True, logger_level=logging.DEBUG)
 
@@ -258,5 +275,3 @@ def update_user_map(id, **kwargs):
     for key, value in kwargs.items():
         setattr(user_map[id], key, value)
     return
-
-

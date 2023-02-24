@@ -5,6 +5,3 @@ redis_client = redis.Redis(host="localhost", port=6379, db=0, password="frM99110
 
 def get_redis_client():
     return redis_client
-
-
-

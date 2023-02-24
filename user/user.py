@@ -2,20 +2,19 @@
 from datetime import datetime
 from utils.redis import get_redis_client
 import json
+
 user_map = {}
+
 
 class User:
     def __init__(self, user_id):
         self.user_id = user_id
         self.previous_message = ""
-        self.mode = "ask"   
+        self.mode = "ask"
         self.chat_history = []
         self.expire_date = datetime.now()
         self.remain_token = 1000
         self.email = ""
-
-
-
 
 
 def check_user(user_id):
@@ -55,7 +54,8 @@ def update_user(user_id, **kwargs):
         user[key] = value
     redis_client.hset("user", user_id, json.dumps(user))
     return user
-               
+
+
 def get_user(user_id):
     redis_client = get_redis_client()
     user = redis_client.hget("user", user_id)
