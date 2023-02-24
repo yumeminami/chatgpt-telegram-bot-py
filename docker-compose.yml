@@ -12,10 +12,22 @@ services:
       - 6379:6379
     
   chatbot:
-    image: rongmanfeng/chatbot:latest
+    image: chatbot:latest
     container_name: chatbot
     volumes:
-      - ~/workspace/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
+      - ~/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
     command: python3 main.py
     depends_on:
       - redis
+
+  app:
+    image: chatbot:latest
+    container_name: app
+    volumes:
+      - ~/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
+    command: python3 app.py
+    depends_on:
+      - redis
+      - chatbot
+    ports:
+      - 8000:8000
