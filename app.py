@@ -5,7 +5,7 @@ from utils.redis import get_redis_client
 import stripe
 import uvicorn
 
-endpoint_secret = "whsec_SumhKSfGtMeCZ1A9fsecFai0GO6g53yl"
+endpoint_secret = "whsec_GQEXXEM15BYeiEdVkSKdEc46OV5WXO39"
 app = FastAPI()
 
 @app.get("/")

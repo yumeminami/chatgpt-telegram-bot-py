@@ -1,13 +1,12 @@
 version: '3'
 services:
   redis:
-    image: redis:4.0.1
+    image: redis:7.0
     container_name: redis
     volumes:
-      - /home/ubuntu/chatgpt-telegram-bot-py/redis/data:/data
-      - /home/ubuntu/chatgpt-telegram-bot-py/redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
-      - /home/ubuntu/chatgpt-telegram-bot-py/redis/logs:/logs
-    command: redis-server --requirepass frM991103
+      - /home/ubuntu/chatgpt-telegram-bot-py/redis/data:/data:rw
+      - /home/ubuntu/chatgpt-telegram-bot-py/redis/conf/redis.conf:/etc/redis/redis.conf:rw
+    command: redis-server /etc/redis/redis.conf
     networks:
       - my_network
     ports:
