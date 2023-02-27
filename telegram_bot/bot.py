@@ -6,7 +6,11 @@ from stable_diffusion.stable_diffusion import generate
 from user.user import User, get_user, update_user, user_map
 from utils.token import count_token
 from utils.redis import get_redis_client
-from telegram_bot.text import standard_subscripition, pro_subscription, subscription_note
+from telegram_bot.text import (
+    standard_subscripition,
+    pro_subscription,
+    subscription_note,
+)
 
 
 main_menu_text = (
@@ -73,7 +77,6 @@ def get_bot():
 
 
 def run_bot():
-
     print("Authorized on account {}".format(os.getenv("TELEGRAM_BOT_TOKEN")))
     # commands = bot.get_my_commands()
     # for command in commands:
@@ -130,9 +133,8 @@ def run_bot():
                 text="Please enter your email address",
                 parse_mode="Markdown",
                 chat_id=call.message.chat.id,
-                
             )
-            
+
             return
         standard_subscription_button = telebot.types.InlineKeyboardButton(
             "💳Standard",
@@ -146,7 +148,11 @@ def run_bot():
         markup.add(standard_subscription_button, pro_subscription_button)
         bot.send_message(
             chat_id=call.message.chat.id,
-            text=standard_subscripition+"\n"+pro_subscription+"\n"+subscription_note,
+            text=standard_subscripition
+            + "\n"
+            + pro_subscription
+            + "\n"
+            + subscription_note,
             parse_mode="Markdown",
             reply_markup=markup,
         )

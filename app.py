@@ -8,9 +8,11 @@ import uvicorn
 endpoint_secret = "whsec_GQEXXEM15BYeiEdVkSKdEc46OV5WXO39"
 app = FastAPI()
 
+
 @app.get("/")
 async def hello_world():
-    return JSONResponse(content={"success":True})
+    return JSONResponse(content={"success": True})
+
 
 @app.post("/webhook")
 async def webhook_received(request: Request, stripe_signature: str = Header(None)):
@@ -40,7 +42,6 @@ async def webhook_received(request: Request, stripe_signature: str = Header(None
     else:
         print(f"unhandled event: {event_type}")
 
-   
     return JSONResponse(content={"success": True})
 
 
