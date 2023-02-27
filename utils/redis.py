@@ -1,6 +1,6 @@
 import redis
 
-redis_client = redis.Redis(host="172.17.0.2", port=6379, db=0, password="frM991103")
+redis_client = redis.Redis(host="redis", port=6379, db=0, password="frM991103")
 
 
 def get_redis_client():

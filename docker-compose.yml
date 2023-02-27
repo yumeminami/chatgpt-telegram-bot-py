@@ -8,6 +8,8 @@ services:
       - ~/redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
       - ~/redis/logs:/logs
     command: redis-server --requirepass frM991103
+    networks:
+      - my_network
     ports:
       - 6379:6379
     
@@ -15,8 +17,10 @@ services:
     image: chatbot:latest
     container_name: chatbot
     volumes:
-      - ~/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
+      - /home/ubuntu/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
     command: python3 main.py
+    networks:
+      - my_network
     depends_on:
       - redis
 
@@ -24,10 +28,16 @@ services:
     image: chatbot:latest
     container_name: app
     volumes:
-      - ~/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
+      - /home/ubuntu/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
     command: python3 app.py
+    networks:
+      - my_network
     depends_on:
       - redis
       - chatbot
     ports:
       - 8000:8000
+
+
+networks:
+  my_network:
