@@ -4,9 +4,9 @@ services:
     image: redis:4.0.1
     container_name: redis
     volumes:
-      - ~/redis/data:/data
-      - ~/redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
-      - ~/redis/logs:/logs
+      - /home/ubuntu/chatgpt-telegram-bot-py/redis/data:/data
+      - /home/ubuntu/chatgpt-telegram-bot-py/redis/conf/redis.conf:/usr/local/etc/redis/redis.conf
+      - /home/ubuntu/chatgpt-telegram-bot-py/redis/logs:/logs
     command: redis-server --requirepass frM991103
     networks:
       - my_network
