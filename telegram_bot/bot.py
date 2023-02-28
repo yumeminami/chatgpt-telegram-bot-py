@@ -3,7 +3,7 @@ import telebot
 import logging
 from chatgpt.completions import completions
 from stable_diffusion.stable_diffusion import generate
-from user.user import User, get_user, update_user, user_map
+from user.user import update_user, get_user
 from utils.token import count_token
 from utils.redis import get_redis_client
 from telegram_bot.text import (
@@ -12,6 +12,11 @@ from telegram_bot.text import (
     subscription_note,
 )
 
+ASK_MODE = "ask"
+CONVERSATION_MODE = "conversation"
+IMAGE_MODE = "images"
+TRANSLATE_MODE = "translate"
+ASK_EMAIL_MODE = "ask_email"
 
 main_menu_text = (
     "*Main Menu*\n"
@@ -109,7 +114,9 @@ def run_bot():
 
     @bot.message_handler(commands=["conversation", "images", "ask"])
     def command_handler(message):
-        update_user_map(message.from_user.id, mode=message.text[1:])
+        update_user(
+            message.from_user.id, mode=message.text[1:], conversation_history=""
+        )
         bot.send_message(message.chat.id, button_description[message.text[1:]])
         return
 
@@ -126,15 +133,15 @@ def run_bot():
     @bot.callback_query_handler(func=lambda call: call.data == "subscription")
     def subscription(call):
         bot.answer_callback_query(call.id)
+        # user = get_user(call.from_user.id)
         user = get_user(call.from_user.id)
         print(user)
-        if user is None:
+        if user is None or user.email == "":
             bot.send_message(
                 text="Please enter your email address",
                 parse_mode="Markdown",
                 chat_id=call.message.chat.id,
             )
-
             return
         standard_subscription_button = telebot.types.InlineKeyboardButton(
             "💳Standard",
@@ -170,8 +177,8 @@ def run_bot():
 
     @bot.callback_query_handler(func=lambda call: True)
     def callback_query(call):
+        update_user(call.from_user.id, mode=call.data, conversation_history="")
         bot.answer_callback_query(call.id)
-        update_user_map(call.from_user.id, mode=call.data)
         bot.send_message(
             call.message.chat.id,
             text=button_description[call.data],
@@ -182,39 +189,28 @@ def run_bot():
     @bot.message_handler(regexp=EMAIL_REGEX_PATTERN)
     def handle_email(message):
         bot.send_chat_action(message.chat.id, "typing")
-        user = get_user(message.from_user.id)
+        get_user(message.from_user.id)
         redis_client = get_redis_client()
-        if user is None:
-            update_user(message.from_user.id, email=message.text)
-            redis_client.hset(
-                name="email_to_chat_id", key=message.text, value=message.chat.id
-            )
-            bot.send_message(
-                text="Update email success.",
-                parse_mode="Markdown",
-                chat_id=message.chat.id,
-            )
+        update_user(message.from_user.id, email=message.text, chat_id=message.chat.id)
+        bot.send_message(
+            text="Update email success.",
+            parse_mode="Markdown",
+            chat_id=message.chat.id,
+        )
+        redis_client.hset("email_to_user_id", message.text, message.from_user.id)
+        redis_client.hset(
+            name="email_to_chat_id", key=message.text, value=message.chat.id
+        )
 
-        else:
-            update_user(message.from_user.id, email=message.text)
-            redis_client.hset(
-                name="email_to_chat_id", key=message.text, value=message.chat.id
-            )
-            bot.send_message(
-                text="Update email success.",
-                parse_mode="Markdown",
-                chat_id=message.chat.id,
-            )
         return
 
     @bot.message_handler(content_types=["text"])
     @bot.edited_message_handler(content_types=["text"])
     def handle_text(message):
+        # tell user that bot is typing
         bot.send_chat_action(message.chat.id, "typing")
-        if message.from_user.id not in user_map:
-            user_map[message.from_user.id] = User(message.from_user.id)
-
-        user = user_map[message.from_user.id]
+        # get user
+        user = get_user(message.from_user.id)
 
         prompt = "Human: " + message.text + "\n" + "AI: "
         print("prompt token: ", count_token(prompt))
@@ -232,13 +228,13 @@ def run_bot():
             return
         elif user.mode == "conversation":
             print("conversation")
-            previous_message = user.previous_message
-            prompt = previous_message + prompt
+            conversation_history = user.conversation_history
+            prompt = conversation_history + prompt
             reply = completions(prompt=prompt)
-            previous_message = prompt + reply + "\n"
+            conversation_history = prompt + reply + "\n"
             bot.send_message(message.chat.id, reply)
-            print("previous_message token: ", count_token(previous_message))
-            if count_token(previous_message) > MAX_TOKEN:
+            print("conversation_history token: ", count_token(conversation_history))
+            if count_token(conversation_history) > MAX_TOKEN:
                 bot.send_message(
                     message.chat.id,
                     token_limit_text,
@@ -246,16 +242,12 @@ def run_bot():
                 )
                 bot.send_message(
                     message.chat.id,
-                    "Here is your *conversation history*:\n" + previous_message,
+                    "Here is your *conversation history*:\n" + conversation_history,
                     parse_mode="Markdown",
                 )
-                update_user_map(message.from_user.id, mode="ask")
+                update_user(message.from_user.id, conversation_history="")
                 return
-            update_user_map(
-                message.from_user.id,
-                previous_message=previous_message,
-                mode="conversation",
-            )
+            update_user(message.from_user.id, conversation_history=conversation_history)
             return
         elif user.mode == "images":
             print("images")
@@ -269,15 +261,3 @@ def run_bot():
             return
 
     bot.infinity_polling(skip_pending=True, logger_level=logging.DEBUG)
-
-
-def update_user_map(id, **kwargs):
-    global user_map
-    try:
-        del user_map[id]
-    except:
-        pass
-    user_map[id] = User(id)
-    for key, value in kwargs.items():
-        setattr(user_map[id], key, value)
-    return
