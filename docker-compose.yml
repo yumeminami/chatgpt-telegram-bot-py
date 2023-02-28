@@ -4,9 +4,9 @@ services:
     image: redis:7.0
     container_name: redis
     volumes:
-      - /home/ubuntu/chatgpt-telegram-bot-py/redis/data:/data:rw
-      - /home/ubuntu/chatgpt-telegram-bot-py/redis/conf/redis.conf:/etc/redis/redis.conf:rw
-    command: redis-server /etc/redis/redis.conf
+      - /home/ubuntu/redis/data:/data:rw
+      - /home/ubuntu/redis/conf/redis.conf:/usr/local/etc/redis/redis.conf:rw
+    command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       - my_network
     ports:

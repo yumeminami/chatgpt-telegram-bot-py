@@ -10,6 +10,7 @@ from telegram_bot.text import (
     standard_subscripition,
     pro_subscription,
     subscription_note,
+    subscription_text,
 )
 
 ASK_MODE = "ask"
@@ -145,21 +146,17 @@ def run_bot():
             return
         standard_subscription_button = telebot.types.InlineKeyboardButton(
             "💳Standard",
-            url="https://buy.stripe.com/test_7sI3dufsW7KY1eo7st",
+            url="https://buy.stripe.com/test_fZecO494y0iw3mw3ce",
         )
         pro_subscription_button = telebot.types.InlineKeyboardButton(
-            "💳PRO", url="https://buy.stripe.com/test_7sI3dufsW7KY1eo7st"
+            "💳PRO", url="https://buy.stripe.com/test_4gwcO44Oi1mA4qAaEH"
         )
 
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(standard_subscription_button, pro_subscription_button)
         bot.send_message(
             chat_id=call.message.chat.id,
-            text=standard_subscripition
-            + "\n"
-            + pro_subscription
-            + "\n"
-            + subscription_note,
+            text=subscription_text,
             parse_mode="Markdown",
             reply_markup=markup,
         )

@@ -15,6 +15,7 @@ class User:
         self.expire_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.remain_token = 1000
         self.email = ""
+        self.language = "en"
 
 
 def check_user(user_id, chat_id):
