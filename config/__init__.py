@@ -7,7 +7,6 @@ def init_config():
         data = json.load(f)
     try:
         os.environ["OPENAI_API_KEY"] = data["openai_api_key"]
-        os.environ["TELEGRAM_BOT_TOKEN"] = data["telegram_bot_token"]
         os.environ["STABILITY_KEY"] = data["stability_key"]
         os.environ["STABILITY_HOST"] = "grpc.stability.ai:443"
         return True

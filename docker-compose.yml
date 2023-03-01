@@ -17,6 +17,9 @@ services:
     container_name: chatbot
     volumes:
       - /home/ubuntu/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
+    environment:
+      - WEBHOOK_PORT=8080
+      - TELEGRAM_BOT_TOKEN=6212169703:AAExFIETNFl2lEQ9DeJkuJEsug0aLMSYBlE
     command: python3 main.py
     networks:
       - my_network
@@ -24,6 +27,22 @@ services:
       - redis
     ports:
       - 8080:8080
+
+  chatbot_1:
+    image: chatbot:latest
+    container_name: chatbot_1
+    volumes:
+      - /home/ubuntu/chatgpt-telegram-bot-py:/chatgpt-telegram-bot-py
+    environment:
+      - WEBHOOK_PORT=8081
+      - TELEGRAM_BOT_TOKEN=6136603073:AAFaR39PZfa0UKM7Ro_lsx1vo12-_HQRVP0
+    command: python3 main.py
+    networks:
+      - my_network
+    depends_on:
+      - redis
+    ports:
+      - 8081:8081
 
   app:
     image: chatbot:latest
@@ -36,6 +55,7 @@ services:
     depends_on:
       - redis
       - chatbot
+      - chatbot_1
     ports:
       - 8000:8000
 
@@ -50,7 +70,8 @@ services:
       always
     ports:
       - 443:443
-      
+  
+
 
 
 
