@@ -18,4 +18,6 @@ pro_subscription = (
 
 subscription_note = "*Note*: _If you exceed your monthly token limit, you won't be able to use the service until the next month. However, your subscription will remain active. If your subscription expires but you still have remaining tokens, these tokens will be retained when you resubscribe._"
 
-subscription_text = (standard_subscripition+"\n"+pro_subscription+"\n"+subscription_note)
+subscription_text = (
+    standard_subscripition + "\n" + pro_subscription + "\n" + subscription_note
+)

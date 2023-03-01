@@ -29,7 +29,9 @@ def check_user(user_id, chat_id):
     else:
         # existing user
         # check expire date and remain token
-        if (user["remain_token"] <= 0) or (user["expire_date"] < datetime.now()):
+        if (user["remain_token"] <= 0) or (
+            user["expire_date"] < datetime.now()
+        ):
             # no token or expired
             return False
 
@@ -41,24 +43,28 @@ def get_user(user_id):
         return User(user_id, "")
     else:
         user_dict = json.loads(user_data)
-        user_copy = User(user_dict["user_id"], user_dict["chat_id"])
-        user_copy.mode = user_dict["mode"]
-        user_copy.conversation_history = user_dict["conversation_history"]
-        user_copy.expire_date = user_dict["expire_date"]
-        user_copy.remain_token = user_dict["remain_token"]
-        user_copy.email = user_dict["email"]
-        return user_copy
+        user = User(user_dict["user_id"], user_dict["chat_id"])
+        user.mode = user_dict["mode"]
+        user.conversation_history = user_dict["conversation_history"]
+        user.expire_date = user_dict["expire_date"]
+        user.remain_token = user_dict["remain_token"]
+        user.email = user_dict["email"]
+        return user
 
 
 def update_user(user_id, **kwargs):
     redis_client = get_redis_client()
-    user_copy = get_user(user_id)
-    if user_copy:
+    user = get_user(user_id)
+    if user:
         for key, value in kwargs.items():
-            setattr(user_copy, key, value)
-        redis_client.hset("user", user_id, json.dumps(user_copy.__dict__, default=str))
+            setattr(user, key, value)
+        redis_client.hset(
+            "user", user_id, json.dumps(user.__dict__, default=str)
+        )
     else:
-        user_copy = User(user_id, None)
+        user = User(user_id, None)
         for key, value in kwargs.items():
-            setattr(user_copy, key, value)
-        redis_client.hset("usery", user_id, json.dumps(user_copy.__dict__, default=str))
+            setattr(user, key, value)
+        redis_client.hset(
+            "user", user_id, json.dumps(user.__dict__, default=str)
+        )

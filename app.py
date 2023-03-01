@@ -15,7 +15,9 @@ async def hello_world():
 
 
 @app.post("/webhook")
-async def webhook_received(request: Request, stripe_signature: str = Header(None)):
+async def webhook_received(
+    request: Request, stripe_signature: str = Header(None)
+):
     webhook_secret = endpoint_secret
     data = await request.body()
     try:
