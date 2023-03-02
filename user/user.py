@@ -49,6 +49,7 @@ def get_user(user_id):
         user.remain_token = user_dict["remain_token"]
         user.email = user_dict["email"]
         user.messages = user_dict["messages"]
+        user.language = user_dict["language"]
         return user
 
 

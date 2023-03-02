@@ -3,7 +3,6 @@ from utils.redis import get_redis_client
 from utils.token import count_token
 from user.user import get_user, update_user
 from telegram_bot.text import *
-from chatgpt.completions import completions
 from chatgpt.chat import chat
 from stable_diffusion.stable_diffusion import generate
 import os
@@ -84,31 +83,62 @@ def get_bot():
     return bot
 
 
-@bot.message_handler(commands=["start"])
-def start(message):
-    # print(message)
+def main_menu_markup(language="en"):
     ask_button = telebot.types.InlineKeyboardButton(
-        "💬Ask", callback_data="ask"
+       bot_text[language]["button_text"]["ask"], callback_data="ask"
     )
     chat_button = telebot.types.InlineKeyboardButton(
-        "📢Chat", callback_data="chat"
+        bot_text[language]["button_text"]["chat"], callback_data="chat"
     )
     images_button = telebot.types.InlineKeyboardButton(
-        "🎨Images", callback_data="images"
+        bot_text[language]["button_text"]["images"], callback_data="images"
     )
     subscribe_button = telebot.types.InlineKeyboardButton(
-        "🌟 Subscription(TEST)", callback_data="subscription"
+        bot_text[language]["button_text"]["subscription"], callback_data="subscription"
+    )
+    language_button = telebot.types.InlineKeyboardButton(
+        bot_text[language]["button_text"]["language"], callback_data="language"
     )
     help_button = telebot.types.InlineKeyboardButton(
-        "❓Help", callback_data="help"
+        bot_text[language]["button_text"]["help"], callback_data="help"
     )
     markup = telebot.types.InlineKeyboardMarkup()
     markup.add(chat_button, ask_button, images_button)
     markup.add(subscribe_button)
-    markup.add(help_button)
+    markup.add(language_button, help_button)
+    return markup
+
+
+@bot.message_handler(commands=["start"])
+def start(message):
+    # print(message)
+    user = get_user(message.from_user.id)
+    # ask_button = telebot.types.InlineKeyboardButton(
+    #     "💬Ask", callback_data="ask"
+    # )
+    # chat_button = telebot.types.InlineKeyboardButton(
+    #     "📢Chat", callback_data="chat"
+    # )
+    # images_button = telebot.types.InlineKeyboardButton(
+    #     "🎨Images", callback_data="images"
+    # )
+    # subscribe_button = telebot.types.InlineKeyboardButton(
+    #     "🌟 Subscription(TEST)", callback_data="subscription"
+    # )
+    # language_button = telebot.types.InlineKeyboardButton(
+    #     "🌐 Language", callback_data="language"
+    # )
+    # help_button = telebot.types.InlineKeyboardButton(
+    #     "❓Help", callback_data="help"
+    # )
+    # markup = telebot.types.InlineKeyboardMarkup()
+    # markup.add(chat_button, ask_button, images_button)
+    # markup.add(subscribe_button)
+    # markup.add(help_button)
+    markup = main_menu_markup(user.language)
     bot.send_message(
         message.chat.id,
-        main_menu_text,
+        bot_text[user.language]["main_menu_text"],
         parse_mode="Markdown",
         reply_markup=markup,
     )
@@ -122,7 +152,12 @@ def command_handler(message):
         mode=message.text[1:],
         messages=[],
     )
-    bot.send_message(message.chat.id, button_description[message.text[1:]])
+    user = get_user(message.from_user.id)
+    bot.send_message(
+        message.chat.id,
+        bot_text[user.language]["command_description_text"][message.text[1:]],
+        parse_mode="Markdown",
+    )
     return
 
 
@@ -178,13 +213,57 @@ def help(call):
     return
 
 
+@bot.callback_query_handler(func=lambda call: call.data == "language")
+def language(call):
+    bot.answer_callback_query(call.id)
+    en_language_button = telebot.types.InlineKeyboardButton(
+        "🇺🇸English", callback_data="en"
+    )
+    zh_language_button = telebot.types.InlineKeyboardButton(
+        "🇨🇳中文", callback_data="zh"
+    )
+    tranditional_chinese_button = telebot.types.InlineKeyboardButton(
+        "🇭🇰繁體中文", callback_data="zh-hk"
+    )
+    markup = telebot.types.InlineKeyboardMarkup()
+    markup.add(zh_language_button, tranditional_chinese_button)
+    markup.add(en_language_button)
+    # edit message
+    user = get_user(call.from_user.id)
+    bot.edit_message_text(
+        text=bot_text[user.language]["choose_language_text"],
+        parse_mode="Markdown",
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+        reply_markup=markup,
+    )
+    return
+
+
+@bot.callback_query_handler(
+    func=lambda call: call.data in ["en", "zh", "zh-hk"]
+)
+def set_language(call):
+    bot.answer_callback_query(call.id)
+    update_user(call.from_user.id, language=call.data)
+    bot.edit_message_text(
+        text=bot_text[call.data]["main_menu_text"],
+        parse_mode="Markdown",
+        chat_id=call.message.chat.id,
+        message_id=call.message.message_id,
+        reply_markup=main_menu_markup(call.data),
+    )
+    return
+
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     update_user(call.from_user.id, mode=call.data, messages=[])
+    user = get_user(call.from_user.id)
     bot.answer_callback_query(call.id)
     bot.send_message(
         call.message.chat.id,
-        text=button_description[call.data],
+        text=bot_text[user.language]["command_description_text"][call.data],
         parse_mode="Markdown",
     )
 
@@ -210,6 +289,12 @@ def handle_email(message):
     return
 
 
+@bot.channel_post_handler(content_types=["text"])
+def handle_channel_post(message):
+    pass
+
+
+@bot.chat_join_request_handler
 @bot.message_handler(content_types=["text"])
 @bot.edited_message_handler(content_types=["text"])
 def handle_text(message):
@@ -223,12 +308,15 @@ def handle_text(message):
         if count_token(prompt) > 1000:
             bot.send_message(
                 message.chat.id,
-                token_limit_text,
+                bot_text[user.language]["token_limit_text"],
                 parse_mode="Markdown",
             )
             return
-        reply = completions(prompt=prompt)
-        bot.send_message(message.chat.id, reply)
+        response_message, success = chat([{"role": "user", "content": prompt}])
+        if success == False:
+            bot.send_message(message.chat.id, response_message)
+            return
+        bot.send_message(message.chat.id, response_message["content"])
         return
     elif user.mode == "chat":
         print("chat")
@@ -240,7 +328,11 @@ def handle_text(message):
             return
         user.messages.append(response_message)
         bot.send_message(message.chat.id, response_message["content"])
-        update_user(message.from_user.id, messages=user.messages)
+        update_user(
+            message.from_user.id,
+            chat_id=message.chat.id,
+            messages=user.messages,
+        )
         return
     elif user.mode == "images":
         print("images")

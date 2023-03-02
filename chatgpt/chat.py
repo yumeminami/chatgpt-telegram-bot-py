@@ -9,7 +9,7 @@ def chat(messages: list):
             model="gpt-3.5-turbo",
             messages=messages,
         )
-        print(response)
+        print(response.choices[0].message["content"])
         return response.choices[0].message, True
     except Exception as e:
         print(e)
