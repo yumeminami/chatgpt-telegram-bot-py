@@ -10,12 +10,12 @@ class User:
     def __init__(self, user_id, chat_id):
         self.user_id = user_id
         self.chat_id = chat_id
-        self.mode = "conversation"
-        self.conversation_history = ""
+        self.mode = "chat"
         self.expire_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.remain_token = 1000
         self.email = ""
         self.language = "en"
+        self.messages = []
 
 
 def check_user(user_id, chat_id):
@@ -45,10 +45,10 @@ def get_user(user_id):
         user_dict = json.loads(user_data)
         user = User(user_dict["user_id"], user_dict["chat_id"])
         user.mode = user_dict["mode"]
-        user.conversation_history = user_dict["conversation_history"]
         user.expire_date = user_dict["expire_date"]
         user.remain_token = user_dict["remain_token"]
         user.email = user_dict["email"]
+        user.messages = user_dict["messages"]
         return user
 
 

@@ -4,22 +4,19 @@ from utils.token import count_token
 from user.user import get_user, update_user
 from telegram_bot.text import *
 from chatgpt.completions import completions
+from chatgpt.chat import chat
 from stable_diffusion.stable_diffusion import generate
 import os
 
-ASK_MODE = "ask"
-CONVERSATION_MODE = "conversation"
-IMAGE_MODE = "images"
-TRANSLATE_MODE = "translate"
-ASK_EMAIL_MODE = "ask_email"
 
 main_menu_text = (
-    "*OpenAI GPT-3 DALL-E Bot*(Beta)\n"
-    "*NOTE*: _The bot is still in beta, and the service is not stable. If you encounter any problems, please contact me._\n"
+    "*OpenAI GPT-3.5 DALL-E Bot*(Beta)\n"
+    "*NOTE*: _The bot now implements the GPT-3.5 model and real_ _*chat*_ _feature like ChatGPT._\n"
     "\n"
     "👋 Hi, I am a bot that uses OpenAI GPT-3 and DALL-E to help you.\n"
     "\n"
     "🤔 *What can I do?*\n"
+    "🤖 Chat with me\n"
     "🔎 Find answers\n"
     "📚 Write academic essays\n"
     "💻 Programming code\n"
@@ -27,13 +24,13 @@ main_menu_text = (
     "🌎 Translate and chat in any language\n"
     "🖼 Generate images\n"
     "\n"
-    "Click */ask* - _Ask me anything._\n"
+    "*/chat* - _Have a conversation with me._\n"
     "\n"
-    "Click */conversation* - _Start a new conversation_\n"
+    "*/ask* - _ Ask anything you want._\n"
     "\n"
-    "Click */images* - _Generate images by given prompt._\n"
+    "*/images* - _Generate images with prompt._\n"
     "\n"
-    "Click */help* - _You can use it for help_\n"
+    "*/help* - _Find assistance for your querie._\n"
     "\n"
     "Contact: fengrongman@gmail.com\n"
 )
@@ -43,11 +40,9 @@ ask_help_text = (
     "/ask\n"
     "   *ask me anything* - _You can use the ask command then input something then I will answer._\n"
 )
-conversation_help_text = (
-    "/conversation\n"
-    "   *start a conversation* - _You can use the conversation command and I will have a conversation with you. "
-    "(PS: Currently, the maximum token count permitted for a conversation is 1000, which roughly translates to 700 words. "
-    "When the limit is exceeded, the bot will prompt you and output a log of your conversation.)_\n"
+chat_help_text = (
+    "/chat\n"
+    "   *start a chat* - _You can use the chat command and I will have a chat with you. "
 )
 
 images_help_text = (
@@ -57,9 +52,9 @@ images_help_text = (
 
 button_description = {
     "ask": "You can ask me anything.",
-    "conversation": "Let's start a converastion.",
+    "chat": "Let's chat.",
     "images": "Give me a prompt and I will generate the image. The generation process may take a while.",
-    "conversation_help": conversation_help_text,
+    "chat_help": chat_help_text,
     "images_help": images_help_text,
     "ask_help": ask_help_text,
     "help": "Instruction",
@@ -67,18 +62,15 @@ button_description = {
 
 token_limit_text = (
     "*Token limit*\n"
-    "_Since the token of the current prompt has exceeded the limit_"
+    "_Since the token of the current prompt has exceeded the limit_\n"
+    "_You can reduce the length of the input or start a new conversation with /chat_"
 )
 
 help_text = (
-    "*Instruction:*\n"
-    + ask_help_text
-    + conversation_help_text
-    + images_help_text
+    "*Instruction:*\n" + ask_help_text + chat_help_text + images_help_text
 )
 
 user_map = {}
-MAX_TOKEN = 800
 EMAIL_REGEX_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
 bot = telebot.TeleBot(
@@ -98,8 +90,8 @@ def start(message):
     ask_button = telebot.types.InlineKeyboardButton(
         "💬Ask", callback_data="ask"
     )
-    conversation_button = telebot.types.InlineKeyboardButton(
-        "📢Conversation", callback_data="conversation"
+    chat_button = telebot.types.InlineKeyboardButton(
+        "📢Chat", callback_data="chat"
     )
     images_button = telebot.types.InlineKeyboardButton(
         "🎨Images", callback_data="images"
@@ -111,7 +103,7 @@ def start(message):
         "❓Help", callback_data="help"
     )
     markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(ask_button, conversation_button, images_button)
+    markup.add(chat_button, ask_button, images_button)
     markup.add(subscribe_button)
     markup.add(help_button)
     bot.send_message(
@@ -123,12 +115,12 @@ def start(message):
     return
 
 
-@bot.message_handler(commands=["conversation", "images", "ask"])
+@bot.message_handler(commands=["chat", "images", "ask"])
 def command_handler(message):
     update_user(
         message.from_user.id,
         mode=message.text[1:],
-        conversation_history="",
+        messages=[],
     )
     bot.send_message(message.chat.id, button_description[message.text[1:]])
     return
@@ -138,7 +130,7 @@ def command_handler(message):
 def help(message):
     bot.send_message(
         message.chat.id,
-        text=help_text,
+        text="help",
         parse_mode="Markdown",
     )
     return
@@ -179,7 +171,7 @@ def subscription(call):
 def help(call):
     bot.answer_callback_query(call.id)
     bot.send_message(
-        text=help_text,
+        text="help",
         parse_mode="Markdown",
         chat_id=call.message.chat.id,
     )
@@ -188,7 +180,7 @@ def help(call):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
-    update_user(call.from_user.id, mode=call.data, conversation_history="")
+    update_user(call.from_user.id, mode=call.data, messages=[])
     bot.answer_callback_query(call.id)
     bot.send_message(
         call.message.chat.id,
@@ -225,11 +217,10 @@ def handle_text(message):
     bot.send_chat_action(message.chat.id, "typing")
     # get user
     user = get_user(message.from_user.id)
-    prompt = "Human: " + message.text + "\nAI: "
-    print("prompt token: ", count_token(prompt))
     if user.mode == "ask":
         print("ask")
-        if count_token(prompt) > MAX_TOKEN:
+        prompt = message.text
+        if count_token(prompt) > 1000:
             bot.send_message(
                 message.chat.id,
                 token_limit_text,
@@ -239,34 +230,17 @@ def handle_text(message):
         reply = completions(prompt=prompt)
         bot.send_message(message.chat.id, reply)
         return
-    elif user.mode == "conversation":
-        print("conversation")
-        conversation_history = user.conversation_history
-        prompt = conversation_history + prompt
-        reply = completions(prompt=prompt)
-        conversation_history = prompt + reply + "\n"
-        bot.send_message(message.chat.id, reply)
-        print(
-            "conversation_history token: ",
-            count_token(conversation_history),
-        )
-        if count_token(conversation_history) > MAX_TOKEN:
-            bot.send_message(
-                message.chat.id,
-                token_limit_text,
-                parse_mode="Markdown",
-            )
-            bot.send_message(
-                message.chat.id,
-                "Here is your *conversation history*:\n"
-                + conversation_history,
-                parse_mode="Markdown",
-            )
-            update_user(message.from_user.id, conversation_history="")
+    elif user.mode == "chat":
+        print("chat")
+        chat_message = {"role": "user", "content": message.text}
+        user.messages.append(chat_message)
+        response_message, success = chat(user.messages)
+        if success == False:
+            bot.send_message(message.chat.id, response_message)
             return
-        update_user(
-            message.from_user.id, conversation_history=conversation_history
-        )
+        user.messages.append(response_message)
+        bot.send_message(message.chat.id, response_message["content"])
+        update_user(message.from_user.id, messages=user.messages)
         return
     elif user.mode == "images":
         print("images")

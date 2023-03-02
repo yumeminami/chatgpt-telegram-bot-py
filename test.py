@@ -1,8 +1,12 @@
-from datetime import datetime, timedelta
-import time
+from chatgpt.chat import chat
 
-print(datetime.now())
 
-print(datetime.now() + timedelta(days=30))
+choice, flag = chat(
+    [
+        {"role": "user", "content": "Hello"},
+        {"content": "Hello, how can I assist you today?", "role": "assistant"},
+        {"role": "user", "content": "I want to buy a car"},
+    ]
+)
 
-print(int(time.time()))
+print(choice["content"])

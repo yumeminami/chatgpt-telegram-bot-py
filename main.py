@@ -13,9 +13,9 @@ import telebot
 
 init_config()
 bot = get_bot()
-# commands = bot.get_my_commands()
-# for command in commands:
-#     print(command.command + " - " + command.description)
+commands = bot.get_my_commands()
+for command in commands:
+    print(command.command + " - " + command.description)
 
 WEBHOOK_PORT = int(
     os.environ.get("WEBHOOK_PORT")

@@ -1,5 +1,6 @@
 {
-  "openai_api_key":"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",
+  "openai_api_key_spare":"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",
   "telegram_bot_token":"6212169703:AAExFIETNFl2lEQ9DeJkuJEsug0aLMSYBlE",
-  "stability_key" :"sk-kx8fWqrzt2xw0an9JzvZhJjjXnFQ0Aw6BiiGeIIRcDVtuXX0"
+  "stability_key" :"sk-kx8fWqrzt2xw0an9JzvZhJjjXnFQ0Aw6BiiGeIIRcDVtuXX0",
+  "openai_api_key":"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"
 }
