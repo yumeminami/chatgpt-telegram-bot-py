@@ -75,7 +75,7 @@ bot_text = {
             "images": "🎨Images",
             "help": "❓Help",
             "subscription": "🌟 Subscription(TEST)",
-            "language": "🌐 Language",
+            "language": "🌎  Language",
         },
         "command_description_text": {
             "chat": "Have a conversation with me.",
@@ -138,7 +138,7 @@ bot_text = {
             "images": "🎨图片",
             "help": "❓帮助",
             "subscription": "🌟 订阅(TEST)",
-            "language": "🌐 语言",
+            "language": "🌎  语言",
         },
         "command_description_text": {
             "chat": "开始聊天。",
@@ -197,7 +197,7 @@ bot_text = {
             "images": "🎨圖片",
             "help": "❓幫助",
             "subscription": "🌟 訂閱(TEST)",
-            "language": "🌐 語言",
+            "language": "🌎  語言",
         },
         "command_description_text": {
             "chat": "開始同我傾計。",

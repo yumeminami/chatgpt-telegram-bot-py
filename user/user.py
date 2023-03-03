@@ -1,5 +1,5 @@
 # from utils.redis import redis_client
-from datetime import datetime
+from datetime import datetime, timedelta
 from utils.redis import get_redis_client
 import json
 
@@ -11,29 +11,35 @@ class User:
         self.user_id = user_id
         self.chat_id = chat_id
         self.mode = "chat"
-        self.expire_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.expire_date = (datetime.now() + timedelta(days=3)).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         self.remain_token = 1000
         self.email = ""
         self.language = "en"
         self.messages = []
 
 
-def check_user(user_id, chat_id):
+def check_user(user_id):
     redis_client = get_redis_client()
     user = redis_client.hget("user", user_id)
 
     if user is None:
         # new user
-        user = User(user_id, chat_id)
+        user = User(user_id, "")
         return True
     else:
-        # existing user
-        # check expire date and remain token
-        if (user["remain_token"] <= 0) or (
-            user["expire_date"] < datetime.now()
-        ):
-            # no token or expired
+        user_dict = json.loads(user)
+        if user_dict["mode"] == "expired":
             return False
+        else:
+            expire_date = datetime.strptime(
+                user_dict["expire_date"], "%Y-%m-%d %H:%M:%S"
+            )
+            if expire_date < datetime.now():
+                # update_user(user_id, mode="expired")
+                return False
+    return True
 
 
 def get_user(user_id):

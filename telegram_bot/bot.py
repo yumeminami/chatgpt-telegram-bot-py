@@ -7,69 +7,9 @@ from chatgpt.chat import chat
 from stable_diffusion.stable_diffusion import generate
 import os
 
-
-main_menu_text = (
-    "*OpenAI GPT-3.5 DALL-E Bot*(Beta)\n"
-    "*NOTE*: _The bot now implements the GPT-3.5 model and real_ _*chat*_ _feature like ChatGPT._\n"
-    "\n"
-    "👋 Hi, I am a bot that uses OpenAI GPT-3 and DALL-E to help you.\n"
-    "\n"
-    "🤔 *What can I do?*\n"
-    "🤖 Chat with me\n"
-    "🔎 Find answers\n"
-    "📚 Write academic essays\n"
-    "💻 Programming code\n"
-    "👩‍💻 Write emails and letters\n"
-    "🌎 Translate and chat in any language\n"
-    "🖼 Generate images\n"
-    "\n"
-    "*/chat* - _Have a conversation with me._\n"
-    "\n"
-    "*/ask* - _ Ask anything you want._\n"
-    "\n"
-    "*/images* - _Generate images with prompt._\n"
-    "\n"
-    "*/help* - _Find assistance for your querie._\n"
-    "\n"
-    "Contact: fengrongman@gmail.com\n"
-)
+group_link = {"zh": "https://t.me/+F2l1Z3EeFVg5N2Y1"}
 
 
-ask_help_text = (
-    "/ask\n"
-    "   *ask me anything* - _You can use the ask command then input something then I will answer._\n"
-)
-chat_help_text = (
-    "/chat\n"
-    "   *start a chat* - _You can use the chat command and I will have a chat with you. "
-)
-
-images_help_text = (
-    "/images\n"
-    "   *generate images* - _You can use the images command then input something then generate images._\n"
-)
-
-button_description = {
-    "ask": "You can ask me anything.",
-    "chat": "Let's chat.",
-    "images": "Give me a prompt and I will generate the image. The generation process may take a while.",
-    "chat_help": chat_help_text,
-    "images_help": images_help_text,
-    "ask_help": ask_help_text,
-    "help": "Instruction",
-}
-
-token_limit_text = (
-    "*Token limit*\n"
-    "_Since the token of the current prompt has exceeded the limit_\n"
-    "_You can reduce the length of the input or start a new conversation with /chat_"
-)
-
-help_text = (
-    "*Instruction:*\n" + ask_help_text + chat_help_text + images_help_text
-)
-
-user_map = {}
 EMAIL_REGEX_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
 bot = telebot.TeleBot(
@@ -85,7 +25,7 @@ def get_bot():
 
 def main_menu_markup(language="en"):
     ask_button = telebot.types.InlineKeyboardButton(
-       bot_text[language]["button_text"]["ask"], callback_data="ask"
+        bot_text[language]["button_text"]["ask"], callback_data="ask"
     )
     chat_button = telebot.types.InlineKeyboardButton(
         bot_text[language]["button_text"]["chat"], callback_data="chat"
@@ -94,7 +34,8 @@ def main_menu_markup(language="en"):
         bot_text[language]["button_text"]["images"], callback_data="images"
     )
     subscribe_button = telebot.types.InlineKeyboardButton(
-        bot_text[language]["button_text"]["subscription"], callback_data="subscription"
+        bot_text[language]["button_text"]["subscription"],
+        callback_data="subscription",
     )
     language_button = telebot.types.InlineKeyboardButton(
         bot_text[language]["button_text"]["language"], callback_data="language"
@@ -113,28 +54,6 @@ def main_menu_markup(language="en"):
 def start(message):
     # print(message)
     user = get_user(message.from_user.id)
-    # ask_button = telebot.types.InlineKeyboardButton(
-    #     "💬Ask", callback_data="ask"
-    # )
-    # chat_button = telebot.types.InlineKeyboardButton(
-    #     "📢Chat", callback_data="chat"
-    # )
-    # images_button = telebot.types.InlineKeyboardButton(
-    #     "🎨Images", callback_data="images"
-    # )
-    # subscribe_button = telebot.types.InlineKeyboardButton(
-    #     "🌟 Subscription(TEST)", callback_data="subscription"
-    # )
-    # language_button = telebot.types.InlineKeyboardButton(
-    #     "🌐 Language", callback_data="language"
-    # )
-    # help_button = telebot.types.InlineKeyboardButton(
-    #     "❓Help", callback_data="help"
-    # )
-    # markup = telebot.types.InlineKeyboardMarkup()
-    # markup.add(chat_button, ask_button, images_button)
-    # markup.add(subscribe_button)
-    # markup.add(help_button)
     markup = main_menu_markup(user.language)
     bot.send_message(
         message.chat.id,
@@ -142,6 +61,34 @@ def start(message):
         parse_mode="Markdown",
         reply_markup=markup,
     )
+    return
+
+
+@bot.message_handler(chat_types=["supergroup"])
+def handle_supergroup(message):
+    group_link_text = "[English](https://t.me/+7DN6wFZ90iA2NTZl)|[中文](https://t.me/+F2l1Z3EeFVg5N2Y1)|[繁体中文](https://t.me/+FYHiPmOLjeExNGNl)"
+    bot.send_chat_action(message.chat.id, "typing")
+    text = message.text
+    if text.startswith("/ask") or text.startswith("ask"):
+        response_message, success = chat([{"role": "user", "content": text}])
+        if success == False:
+            bot.send_message(message.chat.id, response_message)
+            return
+        bot.send_message(
+            message.chat.id,
+            response_message["content"] + "\n\n"
+            "[English](https://t.me/+7DN6wFZ90iA2NTZl)|[中文](https://t.me/+F2l1Z3EeFVg5N2Y1)|[繁体中文](https://t.me/+FYHiPmOLjeExNGNl)",
+            parse_mode="Markdown",
+            reply_to_message_id=message.message_id,
+        )
+    else:
+        bot.send_message(
+            message.chat.id,
+            "Please use /ask or ask the bot to ask something\n\n"
+            "[English](https://t.me/+7DN6wFZ90iA2NTZl)|[中文](https://t.me/+F2l1Z3EeFVg5N2Y1)|[繁体中文](https://t.me/+FYHiPmOLjeExNGNl)",
+            parse_mode="Markdown",
+            reply_to_message_id=message.message_id,
+        )
     return
 
 
@@ -289,12 +236,6 @@ def handle_email(message):
     return
 
 
-@bot.channel_post_handler(content_types=["text"])
-def handle_channel_post(message):
-    pass
-
-
-@bot.chat_join_request_handler
 @bot.message_handler(content_types=["text"])
 @bot.edited_message_handler(content_types=["text"])
 def handle_text(message):
