@@ -8,7 +8,9 @@ from chatgpt.moderation import moeradtions
 from stable_diffusion.stable_diffusion import generate
 import os
 
-SUBSCRIPTION_PAYMENT_URL = "https://buy.stripe.com/14k0420eu0wafWo144?prefilled_email="
+SUBSCRIPTION_PAYMENT_URL = (
+    "https://buy.stripe.com/14k0420eu0wafWo144?prefilled_email="
+)
 
 EMAIL_REGEX_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
@@ -162,7 +164,9 @@ def language(call):
     en_language_button = telebot.types.InlineKeyboardButton(
         "🇺🇸English", callback_data="en"
     )
-    zh_language_button = telebot.types.InlineKeyboardButton("🇨🇳中文", callback_data="zh")
+    zh_language_button = telebot.types.InlineKeyboardButton(
+        "🇨🇳中文", callback_data="zh"
+    )
     tranditional_chinese_button = telebot.types.InlineKeyboardButton(
         "🇭🇰繁體中文", callback_data="zh-hk"
     )
@@ -181,7 +185,9 @@ def language(call):
     return
 
 
-@bot.callback_query_handler(func=lambda call: call.data in ["en", "zh", "zh-hk"])
+@bot.callback_query_handler(
+    func=lambda call: call.data in ["en", "zh", "zh-hk"]
+)
 def set_language(call):
     bot.answer_callback_query(call.id)
     update_user(call.from_user.id, language=call.data)
@@ -213,7 +219,9 @@ def handle_email(message):
     bot.send_chat_action(message.chat.id, "typing")
     get_user(message.from_user.id)
     redis_client = get_redis_client()
-    update_user(message.from_user.id, email=message.text, chat_id=message.chat.id)
+    update_user(
+        message.from_user.id, email=message.text, chat_id=message.chat.id
+    )
     bot.send_message(
         text="Update email success.",
         parse_mode="Markdown",

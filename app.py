@@ -5,7 +5,8 @@ from utils.redis import get_redis_client
 import stripe
 import uvicorn
 
-endpoint_secret = "whsec_cBdZ5QvP98NwqM3Qjxv9GKdaQ5Vv917v"
+
+endpoint_secret = "whsec_gHiFLuFXLH5H8mK5S9fff0AfjmXy0RUo"
 app = FastAPI()
 
 
@@ -15,7 +16,9 @@ async def hello_world():
 
 
 @app.post("/webhook")
-async def webhook_received(request: Request, stripe_signature: str = Header(None)):
+async def webhook_received(
+    request: Request, stripe_signature: str = Header(None)
+):
     webhook_secret = endpoint_secret
     data = await request.body()
     try:

@@ -92,7 +92,9 @@ bot_text = {
             "*Choose a language*\n"
             "You can choose a language to chat with me.\n"
         ),
-        "forbidden_word_text": ("Sorry, your input violates OpenAI's content policy."),
+        "forbidden_word_text": (
+            "Sorry, your input violates OpenAI's content policy."
+        ),
     },
     "zh": {
         "main_menu_text": (
