@@ -10,6 +10,11 @@
 # )
 
 # print(choice["content"])
-from user.user import check_user
+# from user.user import check_user
 
-print(check_user(2103115991))
+# print(check_user(2103115991))
+
+from chatgpt.moderation import moeradtions
+
+print(moeradtions("I want to buy a car"))
+print(moeradtions("I want to kill you"))

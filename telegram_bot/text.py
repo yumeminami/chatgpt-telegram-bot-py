@@ -27,7 +27,7 @@ bot_text = {
     "en": {
         "main_menu_text": (
             "*OpenAI GPT-3.5 DALL-E Bot*(Beta)\n"
-            "*NOTE*: _The bot now implements the GPT-3.5 model and real chat feature like ChatGPT._\n"
+            "*NOTE*: Due to recent violations of OpenAI's usage policies by some users, which rendered the bot unusable, the bot will now undergo filtering before generating answers using GPT. This may result in the following impacts: 1. Slower answer generation speed. 2. No answer will be generated if the policies are violated.\n"
             "\n"
             "👋 Hi, I am a bot that uses OpenAI GPT-3.5 and DALL-E to help you.\n"
             "\n"
@@ -92,11 +92,12 @@ bot_text = {
             "*Choose a language*\n"
             "You can choose a language to chat with me.\n"
         ),
+        "forbidden_word_text": ("Sorry, your input violates OpenAI's content policy."),
     },
     "zh": {
         "main_menu_text": (
             "*OpenAI GPT-3.5 DALL-E Bot*(Beta)\n"
-            "*注意*: _该机器人现在实现了 GPT-3.5 模型和 ChatGPT 类似的真实聊天功能_\n"
+            "*注意*: 由于近期一些用户违反了 OpenAI 使用政策，导致机器人不可用。为了解决这一问题，机器人现在会先进行过滤，再使用 GPT 生成回答。可能会造成以下影响：1. 回答生成速度变慢。2. 如果违反政策，将不会生成回答。\n"
             "\n"
             "👋 你好,我是一个使用 OpenAI GPT-3.5 和 DALL-E 的机器人,可以帮助你。\n"
             "\n"
@@ -150,11 +151,12 @@ bot_text = {
             "*令牌限制*\n" "_由于当前提示的令牌已超过限制_\n" "_您可以缩短输入的长度或使用 /chat 开始新的对话_"
         ),
         "choose_language_text": ("*选择语言*\n" "你可以选择一种语言与我聊天。\n"),
+        "forbidden_word_text": "抱歉，您的输入违反了 OpenAI 的内容政策。",
     },
     "zh-hk": {
         "main_menu_text": (
             "*OpenAI GPT-3.5 DALL-E Bot*(Beta)\n"
-            "*注意*: _該機器人現在實現了 GPT-3.5 模型和 ChatGPT 類似的真實聊天功能_\n"
+            "*注意*: 由於近期有些用戶違反了 OpenAI 使用政策，導致機器人無法使用。為了解決此問題，機器人現在會進行篩檢後，再使用 GPT 生成回答。可能會造成以下影響：1. 回答生成速度變慢。2. 如果違反政策，則不會生成回答。\n"
             "\n"
             "👋 你好,我是一個使用 OpenAI GPT-3.5 和 DALL-E 的機器人,可以幫助你。\n"
             "\n"
@@ -209,5 +211,6 @@ bot_text = {
             "*令牌限制*\n" "_由於當前提示的令牌已超過限制_\n" "_您可以縮短輸入的長度或使用 /chat 開始新的對話_"
         ),
         "choose_language_text": ("*選擇語言*\n" "你可以選擇一種語言與我聊天。\n"),
+        "forbidden_word_text": "抱歉，您的輸入違反了 OpenAI 的內容政策。",
     },
 }

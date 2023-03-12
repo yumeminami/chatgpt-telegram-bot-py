@@ -4,11 +4,11 @@ from utils.token import count_token
 from user.user import get_user, update_user
 from telegram_bot.text import *
 from chatgpt.chat import chat
+from chatgpt.moderation import moeradtions
 from stable_diffusion.stable_diffusion import generate
 import os
 
-group_link = {"zh": "https://t.me/+F2l1Z3EeFVg5N2Y1"}
-
+SUBSCRIPTION_PAYMENT_URL = "https://buy.stripe.com/14k0420eu0wafWo144?prefilled_email="
 
 EMAIL_REGEX_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
@@ -64,32 +64,29 @@ def start(message):
     return
 
 
-@bot.message_handler(chat_types=["supergroup"])
-def handle_supergroup(message):
-    group_link_text = "[English](https://t.me/+7DN6wFZ90iA2NTZl)|[中文](https://t.me/+F2l1Z3EeFVg5N2Y1)|[繁体中文](https://t.me/+FYHiPmOLjeExNGNl)"
-    bot.send_chat_action(message.chat.id, "typing")
-    text = message.text
-    if text.startswith("/ask") or text.startswith("ask"):
-        response_message, success = chat([{"role": "user", "content": text}])
-        if success == False:
-            bot.send_message(message.chat.id, response_message)
-            return
-        bot.send_message(
-            message.chat.id,
-            response_message["content"] + "\n\n"
-            "[English](https://t.me/+7DN6wFZ90iA2NTZl)|[中文](https://t.me/+F2l1Z3EeFVg5N2Y1)|[繁体中文](https://t.me/+FYHiPmOLjeExNGNl)",
-            parse_mode="Markdown",
-            reply_to_message_id=message.message_id,
-        )
-    else:
-        bot.send_message(
-            message.chat.id,
-            "Please use /ask or ask the bot to ask something\n\n"
-            "[English](https://t.me/+7DN6wFZ90iA2NTZl)|[中文](https://t.me/+F2l1Z3EeFVg5N2Y1)|[繁体中文](https://t.me/+FYHiPmOLjeExNGNl)",
-            parse_mode="Markdown",
-            reply_to_message_id=message.message_id,
-        )
-    return
+# @bot.message_handler(chat_types=["supergroup"])
+# def handle_supergroup(message):
+#     bot.send_chat_action(message.chat.id, "typing")
+#     text = message.text
+#     if text.startswith("/ask") or text.startswith("ask"):
+#         response_message, success = chat([{"role": "user", "content": text}])
+#         if success == False:
+#             bot.send_message(message.chat.id, response_message)
+#             return
+#         bot.send_message(
+#             message.chat.id,
+#             response_message["content"],
+#             parse_mode="Markdown",
+#             reply_to_message_id=message.message_id,
+#         )
+#     else:
+#         bot.send_message(
+#             message.chat.id,
+#             "Please use /ask or ask the bot to ask something\n\n",
+#             parse_mode="Markdown",
+#             reply_to_message_id=message.message_id,
+#         )
+#     return
 
 
 @bot.message_handler(commands=["chat", "images", "ask"])
@@ -132,14 +129,13 @@ def subscription(call):
         )
         return
     standard_subscription_button = telebot.types.InlineKeyboardButton(
-        "💳Standard",
-        url="https://buy.stripe.com/test_fZecO494y0iw3mw3ce",
+        "💳PAYMENT", url=SUBSCRIPTION_PAYMENT_URL + user.email
     )
-    pro_subscription_button = telebot.types.InlineKeyboardButton(
-        "💳PRO", url="https://buy.stripe.com/test_4gwcO44Oi1mA4qAaEH"
-    )
+    # pro_subscription_button = telebot.types.InlineKeyboardButton(
+    #     "💳PRO", url="https://buy.stripe.com/test_4gwcO44Oi1mA4qAaEH"
+    # )
     markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(standard_subscription_button, pro_subscription_button)
+    markup.add(standard_subscription_button)
     bot.send_message(
         chat_id=call.message.chat.id,
         text=subscription_text,
@@ -166,9 +162,7 @@ def language(call):
     en_language_button = telebot.types.InlineKeyboardButton(
         "🇺🇸English", callback_data="en"
     )
-    zh_language_button = telebot.types.InlineKeyboardButton(
-        "🇨🇳中文", callback_data="zh"
-    )
+    zh_language_button = telebot.types.InlineKeyboardButton("🇨🇳中文", callback_data="zh")
     tranditional_chinese_button = telebot.types.InlineKeyboardButton(
         "🇭🇰繁體中文", callback_data="zh-hk"
     )
@@ -187,9 +181,7 @@ def language(call):
     return
 
 
-@bot.callback_query_handler(
-    func=lambda call: call.data in ["en", "zh", "zh-hk"]
-)
+@bot.callback_query_handler(func=lambda call: call.data in ["en", "zh", "zh-hk"])
 def set_language(call):
     bot.answer_callback_query(call.id)
     update_user(call.from_user.id, language=call.data)
@@ -221,18 +213,13 @@ def handle_email(message):
     bot.send_chat_action(message.chat.id, "typing")
     get_user(message.from_user.id)
     redis_client = get_redis_client()
-    update_user(
-        message.from_user.id, email=message.text, chat_id=message.chat.id
-    )
+    update_user(message.from_user.id, email=message.text, chat_id=message.chat.id)
     bot.send_message(
         text="Update email success.",
         parse_mode="Markdown",
         chat_id=message.chat.id,
     )
     redis_client.hset("email_to_user_id", message.text, message.from_user.id)
-    redis_client.hset(
-        name="email_to_chat_id", key=message.text, value=message.chat.id
-    )
     return
 
 
@@ -243,6 +230,14 @@ def handle_text(message):
     bot.send_chat_action(message.chat.id, "typing")
     # get user
     user = get_user(message.from_user.id)
+    if moeradtions(message.text) is True:
+        bot.send_message(
+            message.chat.id,
+            bot_text[user.language]["forbidden_word_text"],
+            parse_mode="Markdown",
+        )
+        return
+
     if user.mode == "ask":
         print("ask")
         prompt = message.text

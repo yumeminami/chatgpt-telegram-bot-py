@@ -7,3 +7,7 @@ redis_client = redis.Redis(
 
 def get_redis_client():
     return redis_client
+
+
+def disconnect_redis_client():
+    redis_client.close()
