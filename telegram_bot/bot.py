@@ -1,17 +1,19 @@
 import telebot
 from utils.redis import get_redis_client
-from utils.token import count_token
 from user.user import get_user, update_user
 from telegram_bot.text import *
 from chatgpt.chat import chat
 from chatgpt.moderation import moeradtions
 from stable_diffusion.stable_diffusion import generate
 import os
+import re
 
+# SUBSCRIPTION_PAYMENT_URL = (
+#     "https://buy.stripe.com/14k0420eu0wafWo144?prefilled_email="
+# )
 SUBSCRIPTION_PAYMENT_URL = (
-    "https://buy.stripe.com/14k0420eu0wafWo144?prefilled_email="
+    "https://buy.stripe.com/test_5kAbIUg1seUy5cQfYY?prefilled_email="
 )
-
 EMAIL_REGEX_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
 bot = telebot.TeleBot(
@@ -52,43 +54,32 @@ def main_menu_markup(language="en"):
     return markup
 
 
+def subscription_markup(email: str):
+    standard_subscription_button = telebot.types.InlineKeyboardButton(
+        "💳PAYMENT", url=SUBSCRIPTION_PAYMENT_URL + email
+    )
+    markup = telebot.types.InlineKeyboardMarkup()
+    markup.add(standard_subscription_button)
+    return markup
+
+
 @bot.message_handler(commands=["start"])
 def start(message):
-    # print(message)
     user = get_user(message.from_user.id)
+    expire_date = user.expire_date
+    user_subscription_info_text = bot_text[user.language][
+        "user_subscription_info_text"
+    ] + str("*" + expire_date + "*")
     markup = main_menu_markup(user.language)
     bot.send_message(
         message.chat.id,
-        bot_text[user.language]["main_menu_text"],
+        bot_text[user.language]["main_menu_text"]
+        + "\n"
+        + user_subscription_info_text,
         parse_mode="Markdown",
         reply_markup=markup,
     )
     return
-
-
-# @bot.message_handler(chat_types=["supergroup"])
-# def handle_supergroup(message):
-#     bot.send_chat_action(message.chat.id, "typing")
-#     text = message.text
-#     if text.startswith("/ask") or text.startswith("ask"):
-#         response_message, success = chat([{"role": "user", "content": text}])
-#         if success == False:
-#             bot.send_message(message.chat.id, response_message)
-#             return
-#         bot.send_message(
-#             message.chat.id,
-#             response_message["content"],
-#             parse_mode="Markdown",
-#             reply_to_message_id=message.message_id,
-#         )
-#     else:
-#         bot.send_message(
-#             message.chat.id,
-#             "Please use /ask or ask the bot to ask something\n\n",
-#             parse_mode="Markdown",
-#             reply_to_message_id=message.message_id,
-#         )
-#     return
 
 
 @bot.message_handler(commands=["chat", "images", "ask"])
@@ -128,21 +119,14 @@ def subscription(call):
             text="Please enter your email address",
             parse_mode="Markdown",
             chat_id=call.message.chat.id,
+            reply_markup=telebot.types.ForceReply(selective=True),
         )
         return
-    standard_subscription_button = telebot.types.InlineKeyboardButton(
-        "💳PAYMENT", url=SUBSCRIPTION_PAYMENT_URL + user.email
-    )
-    # pro_subscription_button = telebot.types.InlineKeyboardButton(
-    #     "💳PRO", url="https://buy.stripe.com/test_4gwcO44Oi1mA4qAaEH"
-    # )
-    markup = telebot.types.InlineKeyboardMarkup()
-    markup.add(standard_subscription_button)
     bot.send_message(
         chat_id=call.message.chat.id,
         text=subscription_text,
         parse_mode="Markdown",
-        reply_markup=markup,
+        reply_markup=subscription_markup(email=user.email),
     )
     return
 
@@ -214,21 +198,18 @@ def callback_query(call):
 
 
 # handle email
-@bot.message_handler(regexp=EMAIL_REGEX_PATTERN)
 def handle_email(message):
-    bot.send_chat_action(message.chat.id, "typing")
+    email = message.text
+    if re.match(EMAIL_REGEX_PATTERN, email) is None:
+        return "Please enter a valid email address"
     get_user(message.from_user.id)
     redis_client = get_redis_client()
-    update_user(
-        message.from_user.id, email=message.text, chat_id=message.chat.id
-    )
-    bot.send_message(
-        text="Update email success.",
-        parse_mode="Markdown",
-        chat_id=message.chat.id,
-    )
-    redis_client.hset("email_to_user_id", message.text, message.from_user.id)
-    return
+    email = email[: email.index("@")].lower() + email[email.index("@") :]
+    if redis_client.sadd("emails", email) == 0:
+        return "This email address has been used"
+    update_user(message.from_user.id, email=email, chat_id=message.chat.id)
+    redis_client.hset("email_to_user_id", email, message.from_user.id)
+    return "Thank you for your email address"
 
 
 @bot.message_handler(content_types=["text"])
@@ -236,6 +217,18 @@ def handle_email(message):
 def handle_text(message):
     # tell user that bot is typing
     bot.send_chat_action(message.chat.id, "typing")
+    # handle email
+    if (
+        message.reply_to_message is not None
+        and message.reply_to_message.text == "Please enter your email address"
+    ):
+        response = handle_email(message)
+        bot.send_message(
+            chat_id=message.chat.id,
+            text=response,
+            parse_mode="Markdown",
+        )
+        return
     # get user
     user = get_user(message.from_user.id)
     if moeradtions(message.text) is True:
@@ -245,17 +238,9 @@ def handle_text(message):
             parse_mode="Markdown",
         )
         return
-
     if user.mode == "ask":
         print("ask")
         prompt = message.text
-        if count_token(prompt) > 1000:
-            bot.send_message(
-                message.chat.id,
-                bot_text[user.language]["token_limit_text"],
-                parse_mode="Markdown",
-            )
-            return
         response_message, success = chat([{"role": "user", "content": prompt}])
         if success == False:
             bot.send_message(message.chat.id, response_message)

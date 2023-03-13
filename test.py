@@ -14,7 +14,7 @@
 
 # print(check_user(2103115991))
 
-from chatgpt.moderation import moeradtions
+# from chatgpt.moderation import moeradtions
 
-print(moeradtions("I want to buy a car"))
-print(moeradtions("I want to kill you"))
+# print(moeradtions("I want to buy a car"))
+# print(moeradtions("I want to kill you"))

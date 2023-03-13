@@ -6,7 +6,8 @@ import stripe
 import uvicorn
 
 
-endpoint_secret = "whsec_gHiFLuFXLH5H8mK5S9fff0AfjmXy0RUo"
+# endpoint_secret = "whsec_gHiFLuFXLH5H8mK5S9fff0AfjmXy0RUo"
+endpoint_secret = "whsec_wt1e9dUIjA2J5O96qSGEkAuXmOz6ysmx"
 app = FastAPI()
 
 

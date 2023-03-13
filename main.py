@@ -45,10 +45,6 @@ def process_webhook(update: dict):
     """
     if update:
         print(update)
-        # message = update.get("message")
-        # # date = message.get("date")
-        # if date < start_time:
-        #     return
         update = telebot.types.Update.de_json(update)
         bot.process_new_updates([update])
     else:
@@ -68,7 +64,6 @@ bot.set_webhook(
 
 timer = threading.Timer(interval=5.0, function=check_payment_update)
 timer.start()
-# Process(target=check_payment_update).start()
 
 uvicorn.run(
     app, host=WEBHOOK_LISTEN, port=WEBHOOK_PORT, timeout_keep_alive=300

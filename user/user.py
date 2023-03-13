@@ -3,18 +3,15 @@ from datetime import datetime, timedelta
 from utils.redis import get_redis_client
 import json
 
-user_map = {}
-
 
 class User:
     def __init__(self, user_id, chat_id):
         self.user_id = user_id
         self.chat_id = chat_id
         self.mode = "chat"
-        self.expire_date = (datetime.now() + timedelta(days=3)).strftime(
+        self.expire_date = (datetime.now() + timedelta(days=7)).strftime(
             "%Y-%m-%d %H:%M:%S"
         )
-        self.remain_token = 1000
         self.email = ""
         self.language = "en"
         self.messages = []
@@ -52,7 +49,6 @@ def get_user(user_id):
         user = User(user_dict["user_id"], user_dict["chat_id"])
         user.mode = user_dict["mode"]
         user.expire_date = user_dict["expire_date"]
-        user.remain_token = user_dict["remain_token"]
         user.email = user_dict["email"]
         user.messages = user_dict["messages"]
         user.language = user_dict["language"]
@@ -62,16 +58,6 @@ def get_user(user_id):
 def update_user(user_id, **kwargs):
     redis_client = get_redis_client()
     user = get_user(user_id)
-    if user:
-        for key, value in kwargs.items():
-            setattr(user, key, value)
-        redis_client.hset(
-            "user", user_id, json.dumps(user.__dict__, default=str)
-        )
-    else:
-        user = User(user_id, None)
-        for key, value in kwargs.items():
-            setattr(user, key, value)
-        redis_client.hset(
-            "user", user_id, json.dumps(user.__dict__, default=str)
-        )
+    for key, value in kwargs.items():
+        setattr(user, key, value)
+    redis_client.hset("user", user_id, json.dumps(user.__dict__, default=str))

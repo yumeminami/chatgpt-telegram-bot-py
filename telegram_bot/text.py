@@ -95,6 +95,7 @@ bot_text = {
         "forbidden_word_text": (
             "Sorry, your input violates OpenAI's content policy."
         ),
+        "user_subscription_info_text": "Your subscription: Expires on ",
     },
     "zh": {
         "main_menu_text": (
@@ -154,6 +155,7 @@ bot_text = {
         ),
         "choose_language_text": ("*选择语言*\n" "你可以选择一种语言与我聊天。\n"),
         "forbidden_word_text": "抱歉，您的输入违反了 OpenAI 的内容政策。",
+        "user_subscription_info_text": "您的订阅: 到期时间为 ",
     },
     "zh-hk": {
         "main_menu_text": (
@@ -214,5 +216,6 @@ bot_text = {
         ),
         "choose_language_text": ("*選擇語言*\n" "你可以選擇一種語言與我聊天。\n"),
         "forbidden_word_text": "抱歉，您的輸入違反了 OpenAI 的內容政策。",
+        "user_subscription_info_text": "您的訂閱: 到期時間為 ",
     },
 }
