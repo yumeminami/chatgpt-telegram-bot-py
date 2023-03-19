@@ -1,34 +1,17 @@
 standard_subscripition = (
     "*Standard Subscription*:\n"
-    "- 5 dollars per month\n"
+    "- 10 HKD per month\n"
     "- Unlimited chat with the bot\n"
-    "- 50,000 tokens per month (approximately 40,000 words)\n"
-    "- Access to all basic features\n"
 )
 
-pro_subscription = (
-    "*Pro Subscription*:\n"
-    "- 10 dollars per month\n"
-    "- All Standard Subscription features\n"
-    "- Double the tokens: 100,000 tokens per month (approximately 80,000 words)\n"
-    "- Additional 20,000 tokens per month\n"
-    "- Faster response time\n"
-    "- Priority access to new features and updates\n"
-)
-
-subscription_note = "*Note*: _If you exceed your monthly token limit, you won't be able to use the service until the next month. However, your subscription will remain active. If your subscription expires but you still have remaining tokens, these tokens will be retained when you resubscribe._"
-
-subscription_text = (
-    standard_subscripition + "\n" + pro_subscription + "\n" + subscription_note
-)
+subscription_note = "_As the robot is being targeted by some users and has become overwhelmed due to high usage, we kindly ask for everyone's support to help ensure its stability._ 🥺🥺"
+subscription_text = standard_subscripition + "\n" + subscription_note
 
 
 bot_text = {
     "en": {
         "main_menu_text": (
             "*OpenAI GPT-3.5 DALL-E Bot*(Beta)\n"
-            "*NOTE*: Due to recent violations of OpenAI's usage policies by some users, which rendered the bot unusable, the bot will now undergo filtering before generating answers using GPT. This may result in the following impacts: 1. Slower answer generation speed. 2. No answer will be generated if the policies are violated.\n"
-            "\n"
             "👋 Hi, I am a bot that uses OpenAI GPT-3.5 and DALL-E to help you.\n"
             "\n"
             "🤔 *What can I do?*\n"
@@ -49,7 +32,6 @@ bot_text = {
             "\n"
             "*/help* - _Find assistance for your querie._\n"
             "\n"
-            "Contact: fengrongman@gmail.com\n"
         ),
         "main_menu_buttons_text": {
             "ask": "You can ask me anything.",
@@ -74,7 +56,7 @@ bot_text = {
             "chat": "📢Chat",
             "images": "🎨Images",
             "help": "❓Help",
-            "subscription": "🌟 Subscription(TEST)",
+            "subscription": "🌟 Subscription",
             "language": "🌎  Language",
         },
         "command_description_text": {
@@ -100,8 +82,6 @@ bot_text = {
     "zh": {
         "main_menu_text": (
             "*OpenAI GPT-3.5 DALL-E Bot*(Beta)\n"
-            "*注意*: 由于近期一些用户违反了 OpenAI 使用政策，导致机器人不可用。为了解决这一问题，机器人现在会先进行过滤，再使用 GPT 生成回答。可能会造成以下影响：1. 回答生成速度变慢。2. 如果违反政策，将不会生成回答。\n"
-            "\n"
             "👋 你好,我是一个使用 OpenAI GPT-3.5 和 DALL-E 的机器人,可以帮助你。\n"
             "\n"
             "🤔 *我能做什么？*\n"
@@ -121,7 +101,6 @@ bot_text = {
             "\n"
             "*/help* - 找到你的问题的帮助。\n"
             "\n"
-            "联系方式: fengrongman@gmail.com\n"
         ),
         "main_menu_buttons_text": {
             "ask": "你可以问我任何问题。",
@@ -141,7 +120,7 @@ bot_text = {
             "chat": "📢聊天",
             "images": "🎨图片",
             "help": "❓帮助",
-            "subscription": "🌟 订阅(TEST)",
+            "subscription": "🌟 订阅",
             "language": "🌎  语言",
         },
         "command_description_text": {
@@ -160,8 +139,6 @@ bot_text = {
     "zh-hk": {
         "main_menu_text": (
             "*OpenAI GPT-3.5 DALL-E Bot*(Beta)\n"
-            "*注意*: 由於近期有些用戶違反了 OpenAI 使用政策，導致機器人無法使用。為了解決此問題，機器人現在會進行篩檢後，再使用 GPT 生成回答。可能會造成以下影響：1. 回答生成速度變慢。2. 如果違反政策，則不會生成回答。\n"
-            "\n"
             "👋 你好,我是一個使用 OpenAI GPT-3.5 和 DALL-E 的機器人,可以幫助你。\n"
             "\n"
             "🤔 *我能做什麼？*\n"
@@ -182,7 +159,6 @@ bot_text = {
             "\n"
             "*/help* - 找到你的問題的幫助。\n"
             "\n"
-            "聯繫方式: fengrongman@gmail.com\n"
         ),
         "main_menu_buttons_text": {
             "ask": "你可以問我任何問題。",
@@ -202,7 +178,7 @@ bot_text = {
             "chat": "📢聊天",
             "images": "🎨圖片",
             "help": "❓幫助",
-            "subscription": "🌟 訂閱(TEST)",
+            "subscription": "🌟 訂閱",
             "language": "🌎  語言",
         },
         "command_description_text": {

@@ -1,13 +1,12 @@
 from fastapi import FastAPI
 from fastapi import Header, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from utils.redis import get_redis_client
 import stripe
 import uvicorn
 
 
-# endpoint_secret = "whsec_gHiFLuFXLH5H8mK5S9fff0AfjmXy0RUo"
-endpoint_secret = "whsec_wt1e9dUIjA2J5O96qSGEkAuXmOz6ysmx"
+endpoint_secret = "whsec_cBdZ5QvP98NwqM3Qjxv9GKdaQ5Vv917v"
 app = FastAPI()
 
 
@@ -47,6 +46,20 @@ async def webhook_received(
         print(f"unhandled event: {event_type}")
 
     return JSONResponse(content={"success": True})
+
+
+@app.get("/index")
+def get_html():
+    with open("static/index.html") as f:
+        html = f.read()
+    return HTMLResponse(content=html, status_code=200)
+
+
+@app.get("privacypolicy")
+def get_html():
+    with open("static/privacypolicy.html") as f:
+        html = f.read()
+    return HTMLResponse(content=html, status_code=200)
 
 
 uvicorn.run(app, host="0.0.0.0", port=8000)

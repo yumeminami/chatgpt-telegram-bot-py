@@ -1,6 +1,6 @@
 import telebot
 from utils.redis import get_redis_client
-from user.user import get_user, update_user
+from user.user import get_user, update_user, check_user
 from telegram_bot.text import *
 from chatgpt.chat import chat
 from chatgpt.moderation import moeradtions
@@ -8,14 +8,15 @@ from stable_diffusion.stable_diffusion import generate
 import os
 import re
 
-# SUBSCRIPTION_PAYMENT_URL = (
-#     "https://buy.stripe.com/14k0420eu0wafWo144?prefilled_email="
-# )
 SUBSCRIPTION_PAYMENT_URL = (
-    "https://buy.stripe.com/test_5kAbIUg1seUy5cQfYY?prefilled_email="
+    "https://buy.stripe.com/14k0420eu0wafWo144?prefilled_email="
 )
+# SUBSCRIPTION_PAYMENT_URL = (
+#     "https://buy.stripe.com/test_5kAbIUg1seUy5cQfYY?prefilled_email="
+# )
 EMAIL_REGEX_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
+# Initialize bot
 bot = telebot.TeleBot(
     token=os.environ.get("TELEGRAM_BOT_TOKEN"),
     skip_pending=True,
@@ -75,14 +76,19 @@ def start(message):
         message.chat.id,
         bot_text[user.language]["main_menu_text"]
         + "\n"
-        + user_subscription_info_text,
+        + user_subscription_info_text
+        + "\n\n"
+        + "[Join our community](https://t.me/+jsIgjjZkobsyNjNl) and unlock the unlimited potential of our robots - ask away without any hesitation!",
         parse_mode="Markdown",
         reply_markup=markup,
+        disable_web_page_preview=True,
     )
     return
 
 
-@bot.message_handler(commands=["chat", "images", "ask"])
+@bot.message_handler(
+    commands=["chat", "images", "ask"], chat_types=["private"]
+)
 def command_handler(message):
     update_user(
         message.from_user.id,
@@ -212,8 +218,40 @@ def handle_email(message):
     return "Thank you for your email address"
 
 
-@bot.message_handler(content_types=["text"])
-@bot.edited_message_handler(content_types=["text"])
+@bot.message_handler(chat_types=["supergroup"])
+def handle_supergroup(message):
+    bot.send_chat_action(message.chat.id, "typing")
+    text = message.text
+    if text.startswith("/ask") or text.startswith("ask"):
+        if moeradtions(message.text) is True:
+            bot.send_message(
+                message.chat.id,
+                bot_text[user.language]["forbidden_word_text"],
+                parse_mode="Markdown",
+            )
+            return
+        response_message, success = chat([{"role": "user", "content": text}])
+        if success == False:
+            bot.send_message(message.chat.id, response_message)
+            return
+        bot.send_message(
+            message.chat.id,
+            response_message["content"] + "\n\n",
+            parse_mode="Markdown",
+            reply_to_message_id=message.message_id,
+        )
+    else:
+        bot.send_message(
+            message.chat.id,
+            "Please use /ask or ask the bot to ask something\n\n",
+            parse_mode="Markdown",
+            reply_to_message_id=message.message_id,
+        )
+    return
+
+
+@bot.message_handler(content_types=["text"], chat_types=["private"])
+@bot.edited_message_handler(content_types=["text"], chat_types=["private"])
 def handle_text(message):
     # tell user that bot is typing
     bot.send_chat_action(message.chat.id, "typing")
@@ -228,9 +266,24 @@ def handle_text(message):
             text=response,
             parse_mode="Markdown",
         )
+        if response == "Thank you for your email address":
+            bot.send_message(
+                chat_id=message.chat.id,
+                text=subscription_text,
+                parse_mode="Markdown",
+                reply_markup=subscription_markup(email=message.text),
+            )
         return
     # get user
     user = get_user(message.from_user.id)
+    if check_user(user.user_id) is False:
+        bot.send_message(
+            message.chat.id,
+            "Sorry, your subscription has expired. You could use the bell button to subscribe again.",
+            reply_markup=subscription_markup(email=user.email),
+            parse_mode="Markdown",
+        )
+        return
     if moeradtions(message.text) is True:
         bot.send_message(
             message.chat.id,
