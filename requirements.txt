@@ -9,3 +9,4 @@ redis >= 3.5.3
 fastapi >= 0.90
 stripe  >=5.2.0
 uvicorn >= 0.15.0
+schedule >= 1.1.0

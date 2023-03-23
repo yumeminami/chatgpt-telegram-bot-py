@@ -3,6 +3,7 @@ from telegram_bot.bot import get_bot
 from user.user import update_user, get_user
 import threading
 from datetime import datetime, timedelta
+import json
 
 
 def check_payment_update():
@@ -43,5 +44,11 @@ def check_payment_update():
     timer.start()
 
 
-# def check_out_complete_call_back(chat_id):
-#     redis_client = get_redis_client()
+def update_daily_limit():
+    redis_client = get_redis_client()
+    user_ids = redis_client.hgetall("user")
+    for user_id, user_data in user_ids.items():
+        user_id = user_id.decode()
+        user_data = json.loads(user_data.decode())
+        user_data["daily_limit"] = 20
+        redis_client.hset("user", user_id, json.dumps(user_data))

@@ -2,14 +2,13 @@ from config import init_config
 from telegram_bot.bot import get_bot
 import time
 import threading
-from payment.payment import check_payment_update
+from payment.payment import check_payment_update, update_daily_limit
 import os
-
 import logging
 import fastapi
 import uvicorn
 import telebot
-
+import schedule
 
 init_config()
 bot = get_bot()
@@ -17,10 +16,8 @@ commands = bot.get_my_commands()
 for command in commands:
     print(command.command + " - " + command.description)
 
-WEBHOOK_PORT = int(
-    os.environ.get("WEBHOOK_PORT")
-)  # 443, 80, 88 or 8443 (port need to be 'open')
-WEBHOOK_LISTEN = "0.0.0.0"  # In some VPS you may need to put here the IP addr
+WEBHOOK_PORT = int(os.environ.get("WEBHOOK_PORT"))
+WEBHOOK_LISTEN = "0.0.0.0"
 start_time = int(time.time())
 
 logger = telebot.logger
@@ -40,9 +37,6 @@ print(url)
 
 @app.post(url)
 def process_webhook(update: dict):
-    """
-    Process webhook calls
-    """
     if update:
         print(update)
         update = telebot.types.Update.de_json(update)
@@ -51,16 +45,30 @@ def process_webhook(update: dict):
         return
 
 
-# Remove webhook, it fails sometimes the set if there is a previous webhook
 bot.remove_webhook()
 
-# Set webhook
 bot.set_webhook(
     url="https://www.queenacheung.cn/{WEBHOOK_PORT}/webhook".format(
         WEBHOOK_PORT=WEBHOOK_PORT
     ),
-    # certificate=open(WEBHOOK_SSL_CERT, "r"),
 )
+
+
+def daily_task():
+    update_daily_limit()
+    # add other daily tasks here
+
+
+def schedule_loop():
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+
+schedule.every().day.at("00:00").do(daily_task)
+
+thread = threading.Thread(target=schedule_loop)
+thread.start()
 
 timer = threading.Timer(interval=5.0, function=check_payment_update)
 timer.start()

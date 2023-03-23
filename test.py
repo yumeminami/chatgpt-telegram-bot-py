@@ -18,9 +18,16 @@
 
 # print(moeradtions("I want to buy a car"))
 # print(moeradtions("I want to kill you"))
-# from utils.redis import get_redis_client
+from utils.redis import get_redis_client
+import json
+redis_client = get_redis_client()
+user_ids = redis_client.hgetall("user")
+for user_id, user_data in user_ids.items():
+    user_id = user_id.decode()
+    user_data = json.loads(user_data.decode())
+    user_data["daily_limit"] = 20
+    redis_client.hset("user", user_id, json.dumps(user_data))
 
-# redis_client = get_redis_client()
 
 # emails = redis_client.hgetall("email_to_user_id")
 
