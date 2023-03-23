@@ -15,6 +15,7 @@ class User:
         self.email = ""
         self.language = "en"
         self.messages = []
+        self.daily_limit = 20  # Set the default value for daily_limit
 
 
 def check_user(user_id):
@@ -52,6 +53,7 @@ def get_user(user_id):
         user.email = user_dict["email"]
         user.messages = user_dict["messages"]
         user.language = user_dict["language"]
+        user.daily_limit = user_dict["daily_limit"]
         return user
 
 

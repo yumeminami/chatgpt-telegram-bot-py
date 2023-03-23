@@ -4,9 +4,10 @@ from user.user import get_user, update_user, check_user
 from telegram_bot.text import *
 from chatgpt.chat import chat
 from chatgpt.moderation import moeradtions
-from stable_diffusion.stable_diffusion import generate
+from chatgpt.images import images
 import os
 import re
+import threading
 
 SUBSCRIPTION_PAYMENT_URL = (
     "https://buy.stripe.com/14k0420eu0wafWo144?prefilled_email="
@@ -253,6 +254,11 @@ def handle_supergroup(message):
 @bot.message_handler(content_types=["text"], chat_types=["private"])
 @bot.edited_message_handler(content_types=["text"], chat_types=["private"])
 def handle_text(message):
+    # Create a new thread to handle the message
+    threading.Thread(target=handle_text_thread, args=(message,)).start()
+
+
+def handle_text_thread(message):
     # tell user that bot is typing
     bot.send_chat_action(message.chat.id, "typing")
     # handle email
@@ -276,14 +282,15 @@ def handle_text(message):
         return
     # get user
     user = get_user(message.from_user.id)
-    if check_user(user.user_id) is False:
+    if user.daily_limit == 0 and check_user(message.from_user.id) == False:
         bot.send_message(
             message.chat.id,
-            "Sorry, your subscription has expired. You could use the bell button to subscribe again.",
+            "Sorry, you have reached the daily limit. Please try again tomorrow. or you could just use 10HKD to subscribe to unlock unlimited experience.",
             reply_markup=subscription_markup(email=user.email),
             parse_mode="Markdown",
         )
         return
+
     if moeradtions(message.text) is True:
         bot.send_message(
             message.chat.id,
@@ -291,6 +298,7 @@ def handle_text(message):
             parse_mode="Markdown",
         )
         return
+    daily_limit_tips = "Dayily limit: *" + str(user.daily_limit-1) + "/20*"
     if user.mode == "ask":
         print("ask")
         prompt = message.text
@@ -298,7 +306,8 @@ def handle_text(message):
         if success == False:
             bot.send_message(message.chat.id, response_message)
             return
-        bot.send_message(message.chat.id, response_message["content"])
+        bot.send_message(message.chat.id, response_message["content"]+"\n\n"+daily_limit_tips, parse_mode="Markdown")
+        update_user(message.from_user.id, daily_limit=user.daily_limit - 1)
         return
     elif user.mode == "chat":
         print("chat")
@@ -309,20 +318,35 @@ def handle_text(message):
             bot.send_message(message.chat.id, response_message)
             return
         user.messages.append(response_message)
-        bot.send_message(message.chat.id, response_message["content"])
+        bot.send_message(message.chat.id, response_message["content"]+"\n\n"+daily_limit_tips, parse_mode="Markdown")
         update_user(
             message.from_user.id,
             chat_id=message.chat.id,
             messages=user.messages,
+            daily_limit=user.daily_limit - 1,
         )
         return
     elif user.mode == "images":
         print("images")
-        img_path = generate(message.text)
-        bot.send_photo(
+        url = images(message.text)
+        if url is None:
+            bot.send_message(
+                message.chat.id,
+                "Sorry, I can't find any images for your query",
+                parse_mode="Markdown",
+            )
+            return
+
+        bot.send_message(
             message.chat.id,
-            photo=telebot.types.InputFile(img_path),
-            reply_to_message_id=message.message_id,
+            url,
+            parse_mode="Markdown",
         )
-        os.remove(img_path)
+        # img_path = generate(message.text)
+        # bot.send_photo(
+        #     message.chat.id,
+        #     photo=telebot.types.InputFile(img_path),
+        #     reply_to_message_id=message.message_id,
+        # )
+        # os.remove(img_path)
         return
